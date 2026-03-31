@@ -96,11 +96,9 @@ Attention System/
 │   └── index.html
 ├── static/
 │   └── style.css
-├── outputs/
 │   ├── focused.png
 │   ├── distracted.png
 │   └── low_attention.png
-├── requirements.txt
 └── README.md
 ```
 
@@ -121,15 +119,15 @@ Attention System/
 
 ### Focused State
 
-![Focused](outputs/focused.png)
+![Focused](focused.png)
 
 ### Distracted State
 
-![Distracted](outputs/distracted.png)
+![Distracted](distracted.png)
 
 ### Low Attention State
 
-![Low Attention](outputs/low_attention.png)
+![Low Attention](low_attention.png)
 
 ## Results
 
