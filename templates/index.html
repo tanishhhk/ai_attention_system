@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Attention Analytics Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body>
+
+<div class="container">
+
+    <h1>Attention Analytics Dashboard</h1>
+
+    <div class="main">
+
+        <div class="video-section">
+            <img src="{{ url_for('video') }}">
+        </div>
+
+        <div class="info-section">
+
+            <div class="card">
+                <strong>Current State</strong>
+                <div id="state">Analyzing...</div>
+            </div>
+
+            <div class="card">
+                <strong>Focus Score</strong>
+                <div id="score">--</div>
+
+                <div class="progress">
+                    <div id="progress-bar"></div>
+                </div>
+            </div>
+
+            <div class="card">
+                <strong>Observations</strong>
+                <ul id="issues"></ul>
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- ANALYTICS -->
+    <div class="analytics">
+
+        <div class="chart-card">
+            <strong>Score Over Time</strong>
+            <canvas id="scoreChart"></canvas>
+        </div>
+
+        <div class="chart-card">
+            <strong>State Distribution</strong>
+            <canvas id="stateChart"></canvas>
+        </div>
+
+    </div>
+
+</div>
+
+<script>
+let scoreHistory = [];
+let labels = [];
+let stateCount = {
+    "FOCUSED": 0,
+    "ATTENTIVE": 0,
+    "LOW ATTENTION": 0,
+    "DISTRACTED": 0
+};
+
+const scoreChart = new Chart(document.getElementById('scoreChart'), {
+    type: 'line',
+    data: {
+        labels: labels,
+        datasets: [{
+            label: 'Score',
+            data: scoreHistory,
+            tension: 0.3
+        }]
+    }
+});
+
+const stateChart = new Chart(document.getElementById('stateChart'), {
+    type: 'doughnut',
+    data: {
+        labels: Object.keys(stateCount),
+        datasets: [{
+            data: Object.values(stateCount)
+        }]
+    }
+});
+
+setInterval(() => {
+    fetch('/data')
+    .then(res => res.json())
+    .then(data => {
+
+        // UI UPDATE
+        let stateEl = document.getElementById('state');
+        stateEl.innerText = data.state;
+
+        document.getElementById('score').innerText = data.score + "%";
+        document.getElementById('progress-bar').style.width = data.score + "%";
+
+        // ISSUES
+        let issuesList = document.getElementById('issues');
+        issuesList.innerHTML = "";
+
+        if (data.issues.length === 0) {
+            let li = document.createElement('li');
+            li.innerText = "All good — no issues detected";
+            li.classList.add("good");
+            issuesList.appendChild(li);
+        } else {
+            data.issues.forEach(issue => {
+                let li = document.createElement('li');
+                li.innerText = issue;
+                issuesList.appendChild(li);
+            });
+        }
+
+        // UPDATE HISTORY
+        if (scoreHistory.length > 20) {
+            scoreHistory.shift();
+            labels.shift();
+        }
+
+        scoreHistory.push(data.score);
+        labels.push('');
+
+        scoreChart.update();
+
+        // STATE COUNT
+        if (stateCount[data.state] !== undefined) {
+            stateCount[data.state]++;
+        }
+
+        stateChart.data.datasets[0].data = Object.values(stateCount);
+        stateChart.update();
+
+    });
+}, 1000);
+</script>
+
+</body>
+</html>
