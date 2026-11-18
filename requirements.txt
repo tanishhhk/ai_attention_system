@@ -1,0 +1,4 @@
+flask
+opencv-python
+# detector.py uses the legacy mp.solutions API (Pose, FaceMesh)
+mediapipe==0.10.14

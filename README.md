@@ -70,10 +70,10 @@ Based on the computed score, the system classifies the user into one of the foll
 ## How to Run
 
 1. Clone the repository
-   git clone https://github.com/pratyaksha0612/AI-attention-monitoring-system.git
+   git clone https://github.com/tanishhhk/ai_attention_system.git
 
 2. Navigate to project folder
-   cd AI-attention-monitoring-system
+   cd ai_attention_system
 
 3. Install dependencies
    pip install -r requirements.txt
@@ -87,18 +87,18 @@ Based on the computed score, the system classifies the user into one of the foll
 ## Project Structure
 
 ```
-Attention System/
-│
-├── app.py
+ai_attention_system/
+├── app.py               # Flask server and video stream
 ├── src/
-│   └── detector.py
+│   └── detector.py      # MediaPipe landmarks and rule-based scoring
 ├── templates/
 │   └── index.html
 ├── static/
 │   └── style.css
-│   ├── focused.png
-│   ├── distracted.png
-│   └── low_attention.png
+├── requirements.txt
+├── focused.png
+├── distracted.png
+├── low_attention.png
 └── README.md
 ```
 
