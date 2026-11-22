@@ -67,7 +67,8 @@ let stateCount = {
     "FOCUSED": 0,
     "ATTENTIVE": 0,
     "LOW ATTENTION": 0,
-    "DISTRACTED": 0
+    "DISTRACTED": 0,
+    "CRITICAL": 0
 };
 
 const scoreChart = new Chart(document.getElementById('scoreChart'), {
@@ -108,7 +109,7 @@ setInterval(() => {
         let issuesList = document.getElementById('issues');
         issuesList.innerHTML = "";
 
-        if (data.issues.length === 0) {
+        if (data.issues.length === 0 && data.notes.length === 0) {
             let li = document.createElement('li');
             li.innerText = "All good — no issues detected";
             li.classList.add("good");
@@ -117,6 +118,12 @@ setInterval(() => {
             data.issues.forEach(issue => {
                 let li = document.createElement('li');
                 li.innerText = issue;
+                issuesList.appendChild(li);
+            });
+            data.notes.forEach(note => {
+                let li = document.createElement('li');
+                li.innerText = note;
+                li.classList.add("note");
                 issuesList.appendChild(li);
             });
         }

@@ -118,6 +118,11 @@ li.good {
     color: #15803d;
 }
 
+li.note {
+    background: #f1f5f9;
+    color: #475569;
+}
+
 /* Chart Section */
 .analytics {
     margin-top: 40px;

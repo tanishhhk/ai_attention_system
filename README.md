@@ -20,6 +20,8 @@ Maintaining attention during prolonged screen interaction is a critical challeng
 
 Webcam → Frame Capture (OpenCV) → Landmark Detection (MediaPipe Pose + Face Mesh) → Feature Extraction → Rule-Based Analysis → Flask Server → Web Dashboard
 
+The browser version (`web/`) runs the same pipeline on the visitor's device: webcam → MediaPipe Tasks (Pose + Face Landmarker, WebAssembly) → the same rules ported to TypeScript → on-page dashboard. Video is never uploaded.
+
 ## Methodology
 
 ### 1. Landmark Detection
@@ -39,6 +41,19 @@ Relevant spatial relationships are computed, including:
 
 A rule-based scoring system assigns penalties based on detected issues such as slouching, drowsiness, or distraction.
 
+Every rule compares two distances in the same frame, so camera resolution and distance from the camera don't change the result:
+
+| Issue | Measurement | Trips when | Penalty |
+|---|---|---|---|
+| Head Forward | Sideways nose offset from the shoulder midpoint ÷ shoulder width | above 0.20 | −20 |
+| Slouching | Nose height above the shoulder line ÷ shoulder width | below 0.25 | −20 |
+| Leaning | Height gap between the shoulders ÷ shoulder width | above 0.15 | −15 |
+| Eyes Closed | Eyelid gap ÷ eye width, both eyes | below 0.15 | −30 |
+| Yawning | Lip gap ÷ mouth width | above 0.40 | −15 |
+| Looking Away | Nose position between the cheeks (0–1) | outside 0.30–0.70 | −20 |
+
+No face in view scores 0 (Critical). If the shoulders aren't visible, posture is skipped and reported as not checked. The limits are starting values and need tuning across more people and cameras.
+
 ### 4. State Classification
 
 Based on the computed score, the system classifies the user into one of the following states:
@@ -56,7 +71,7 @@ Based on the computed score, the system classifies the user into one of the foll
 * Attention score (0–100)
 * Issue-specific feedback
 * Dynamic cognitive state classification
-* Web-based dashboard using Flask
+* Web-based dashboard using Flask, plus a browser-only version that needs no server
 * No dataset or training required
 
 ## Technologies Used
@@ -66,6 +81,7 @@ Based on the computed score, the system classifies the user into one of the foll
 * MediaPipe
 * Flask
 * HTML, CSS, JavaScript
+* TypeScript, Vite, MediaPipe Tasks Vision (browser version)
 
 ## How to Run
 
@@ -84,13 +100,41 @@ Based on the computed score, the system classifies the user into one of the foll
 5. Open in browser
    http://127.0.0.1:5000/
 
+`requirements.txt` pins `mediapipe==0.10.14`, because newer releases removed the `mp.solutions` API that `detector.py` uses.
+
+### Browser version
+
+```
+cd web
+npm install
+npm run dev
+```
+
+### Tests
+
+Both versions run the same cases from `shared/rules_cases.json`:
+
+```
+python -m unittest discover tests
+cd web && npm test
+```
+
 ## Project Structure
 
 ```
 ai_attention_system/
 ├── app.py               # Flask server and video stream
 ├── src/
-│   └── detector.py      # MediaPipe landmarks and rule-based scoring
+│   ├── detector.py      # MediaPipe landmarks → named points
+│   └── rules.py         # Rule-based scoring (pure Python, no OpenCV/MediaPipe)
+├── shared/
+│   └── rules_cases.json # Test cases shared by the Python and TypeScript rules
+├── tests/
+│   └── test_rules.py
+├── web/                 # Browser version (Vite + TypeScript), deployed on Vercel
+│   ├── index.html
+│   └── src/             # rules.ts, live.ts (camera + MediaPipe), figure.ts, readout.ts, main.ts
+├── vercel.json
 ├── templates/
 │   └── index.html
 ├── static/

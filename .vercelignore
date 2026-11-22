@@ -1,0 +1,11 @@
+app.py
+requirements.txt
+src/
+templates/
+static/
+tests/
+*.png
+docs/
+**/__pycache__/
+web/node_modules/
+web/dist/

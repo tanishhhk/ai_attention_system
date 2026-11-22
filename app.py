@@ -9,7 +9,8 @@ camera = cv2.VideoCapture(0)
 latest_data = {
     "state": "Detecting",
     "score": 0,
-    "issues": []
+    "issues": [],
+    "notes": []
 }
 
 def generate_frames():
@@ -22,12 +23,13 @@ def generate_frames():
 
         frame = cv2.flip(frame, 1)
 
-        frame, score, state, issues = analyze_frame(frame)
+        frame, score, state, issues, notes = analyze_frame(frame)
 
         latest_data = {
             "state": state,
             "score": score,
-            "issues": issues
+            "issues": issues,
+            "notes": notes
         }
 
         _, buffer = cv2.imencode('.jpg', frame)

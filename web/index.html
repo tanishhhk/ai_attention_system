@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="A webcam attention check that scores posture and face position from 0 to 100 with six plain rules. Runs entirely in your browser." />
+    <meta name="theme-color" content="#EEF2F5" />
+    <title>Attention monitor: how focused do you look?</title>
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&display=swap" rel="stylesheet" />
+  </head>
+  <body>
+    <a class="skip" href="#live">Skip to the live check</a>
+
+    <header class="site-head wrap">
+      <span class="site-name">Attention monitor</span>
+      <a href="https://github.com/tanishhhk/ai_attention_system">Source on GitHub</a>
+    </header>
+
+    <main>
+      <section class="hero wrap" aria-labelledby="hero-title">
+        <div class="hero-copy">
+          <h1 id="hero-title">How focused do you look right now?</h1>
+          <p class="lede">
+            This page watches your posture and face through your webcam and scores your attention from 0 to 100, using six plain
+            rules you can read below. It all runs in your browser. Your video never leaves your device.
+          </p>
+          <div class="actions">
+            <a class="btn btn-primary" href="#live" data-start>Start camera</a>
+            <a class="btn" href="#examples">See examples without a camera</a>
+          </div>
+        </div>
+        <figure class="hero-figure">
+          <svg id="hero-svg" class="figure" role="img" aria-label="Landmark figure of a focused person: face outline, eyes, mouth and shoulders drawn as measured points"></svg>
+          <figcaption>The 18 points the rules read, for someone sitting upright and facing the screen.</figcaption>
+        </figure>
+      </section>
+
+      <section id="live" class="panel wrap" aria-labelledby="live-title">
+        <div class="panel-head">
+          <h2 id="live-title">Live check</h2>
+          <button type="button" class="btn btn-primary" id="camera-btn" aria-describedby="camera-help">Start camera</button>
+        </div>
+        <p id="camera-help" class="help">
+          Sit as you normally would, with your face and shoulders in view. The first start downloads the face and pose models,
+          around 20&nbsp;MB.
+        </p>
+        <p class="status" id="camera-status" role="status"></p>
+
+        <div class="live-grid" id="live-grid" hidden>
+          <div class="stage">
+            <video id="video" playsinline muted></video>
+            <svg id="live-svg" class="figure figure-overlay" aria-hidden="true"></svg>
+          </div>
+          <div class="readout" id="live-score"></div>
+          <div class="live-checks" id="live-checks"></div>
+          <div class="history">
+            <div>
+              <h3>Score over the last minute</h3>
+              <svg id="spark" class="spark" viewBox="0 0 300 100" preserveAspectRatio="none" role="img" aria-label="Score over the last minute"></svg>
+            </div>
+            <div>
+              <h3>Time in each state</h3>
+              <dl class="shares" id="shares"></dl>
+            </div>
+          </div>
+        </div>
+        <p class="visually-hidden" aria-live="polite" id="announce"></p>
+      </section>
+
+      <section id="examples" class="panel wrap" aria-labelledby="examples-title">
+        <h2 id="examples-title">Examples without a camera</h2>
+        <p class="help">
+          Each example is a set of landmark positions, the same data the camera produces, scored by the same rules as the live check.
+        </p>
+        <div class="scenarios" role="radiogroup" aria-label="Example" id="scenarios"></div>
+        <div class="example-grid">
+          <figure class="example-figure">
+            <svg id="example-svg" class="figure" role="img" aria-labelledby="example-desc"></svg>
+            <figcaption id="example-desc"></figcaption>
+          </figure>
+          <div class="readout" id="example-score"></div>
+          <div class="example-checks" id="example-checks"></div>
+        </div>
+      </section>
+
+      <section class="panel wrap how" aria-labelledby="how-title">
+        <h2 id="how-title">How it works</h2>
+        <ol class="steps">
+          <li>MediaPipe finds 33 body points and 478 face points in each video frame.</li>
+          <li>
+            Three body points and fifteen face points become six measurements. Each is one distance divided by another in the same
+            frame, so camera resolution and how close you sit don't change the result.
+          </li>
+          <li>Every measurement past its limit takes points off a starting score of 100.</li>
+          <li>The score sets the state: above 80 is focused, above 60 attentive, above 40 low attention, above 20 distracted, otherwise critical.</li>
+        </ol>
+        <h3>Limits</h3>
+        <p>
+          These are hand-written rules, not a trained model. Lighting, glasses and camera angle all move the landmarks, and the limits
+          are starting values that haven't been tuned across many people. It measures where your head, eyes and shoulders are, not
+          what you're thinking about.
+        </p>
+      </section>
+    </main>
+
+    <footer class="site-foot wrap">
+      <p>
+        Built by <a href="https://tanishkjain.vercel.app/">Tanishk Jain</a>. The original Python version (Flask, OpenCV, MediaPipe) and
+        the shared rule tests are in the <a href="https://github.com/tanishhhk/ai_attention_system">repository</a>.
+      </p>
+    </footer>
+
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
