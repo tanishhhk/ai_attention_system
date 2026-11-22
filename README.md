@@ -1,5 +1,7 @@
 # AI-Based Real-Time Attention Monitoring System
 
+**Live demo:** https://ai-attention-system.vercel.app (runs in your browser; video never leaves your device)
+
 ## Abstract
 
 This project presents a real-time, web-based attention monitoring system that evaluates user engagement using computer vision. By integrating posture analysis and facial behavior tracking, the system estimates cognitive states such as focus, distraction, and drowsiness. The solution operates without any training dataset, relying on rule-based inference over pose and facial landmarks.
