@@ -17,7 +17,8 @@ MIN_SHOULDER_VISIBILITY = 0.5
 # Horizontal nose offset from the shoulder midpoint, as a share of shoulder width.
 HEAD_FORWARD_RATIO = 0.20
 # Vertical gap between nose and shoulder line, as a share of shoulder width.
-SLOUCH_RATIO = 0.25
+# Upright photos measured 0.46-0.65, slouched ones 0.33-0.37 (web/src/examples.json).
+SLOUCH_RATIO = 0.40
 # Height difference between the shoulders, as a share of shoulder width.
 LEAN_RATIO = 0.15
 # Eye opening / eye width. Both eyes must be below this, so a wink is not "closed".
@@ -29,14 +30,22 @@ YAWN_RATIO = 0.40
 FACING_MIN = 0.30
 FACING_MAX = 0.70
 
+# Any single tripped check drops the score to 80 or below, out of "Focused".
 PENALTIES = {
     "Head Forward": 20,
     "Slouching": 20,
-    "Leaning": 15,
+    "Leaning": 20,
     "Eyes Closed": 30,
-    "Yawning": 15,
+    "Yawning": 20,
     "Looking Away": 20,
+    "Frequent Yawning": 20,
 }
+
+# A yawn counts once the mouth stays open past YAWN_RATIO this long (talking doesn't).
+YAWN_MIN_SECONDS = 1.0
+# This many counted yawns within the window adds "Frequent Yawning", even between yawns.
+FREQUENT_YAWNS = 2
+YAWN_WINDOW_SECONDS = 60.0
 
 NO_FACE = "No Face Detected"
 SHOULDERS_HIDDEN_NOTE = "Shoulders not in view: posture not checked"
@@ -58,14 +67,27 @@ def _ratio(numerator, denominator):
     return numerator / denominator if denominator > 0 else 0.0
 
 
+def _in_frame(p):
+    return 0.0 <= p["x"] <= 1.0 and 0.0 <= p["y"] <= 1.0
+
+
+def shoulders_visible(pose):
+    """MediaPipe guesses off-frame shoulders with high visibility, so check the frame too."""
+    if pose is None:
+        return False
+    l_sh, r_sh = pose["left_shoulder"], pose["right_shoulder"]
+    return (
+        min(l_sh.get("v", 1.0), r_sh.get("v", 1.0)) >= MIN_SHOULDER_VISIBILITY
+        and _in_frame(l_sh) and _in_frame(r_sh)
+    )
+
+
 def posture_issues(pose, w, h):
     """Return (issues, notes) for the posture checks."""
-    if pose is None:
+    if not shoulders_visible(pose):
         return [], [SHOULDERS_HIDDEN_NOTE]
 
     l_sh, r_sh, nose = pose["left_shoulder"], pose["right_shoulder"], pose["nose"]
-    if min(l_sh.get("v", 1.0), r_sh.get("v", 1.0)) < MIN_SHOULDER_VISIBILITY:
-        return [], [SHOULDERS_HIDDEN_NOTE]
 
     shoulder_width = _dist(l_sh, r_sh, w, h)
     mid_x = (l_sh["x"] + r_sh["x"]) / 2 * w
@@ -136,3 +158,33 @@ def evaluate(pose, face, w, h):
     issues += face_issues(face, w, h)
     score = max(0, 100 - sum(PENALTIES[i] for i in issues))
     return {"score": score, "state": state_for(score), "issues": issues, "notes": notes}
+
+
+class YawnTracker:
+    """Counts yawns over time. Feed it every frame: update(seconds, "Yawning" in issues)."""
+
+    def __init__(self):
+        self._open_since = None
+        self._counted = False
+        self._yawns = []
+
+    def update(self, t, yawning):
+        if yawning:
+            if self._open_since is None:
+                self._open_since, self._counted = t, False
+            if not self._counted and t - self._open_since >= YAWN_MIN_SECONDS:
+                self._yawns.append(t)
+                self._counted = True
+        else:
+            self._open_since = None
+        self._yawns = [y for y in self._yawns if t - y <= YAWN_WINDOW_SECONDS]
+        return len(self._yawns)
+
+
+def add_history(result, recent_yawns):
+    """Add the Frequent Yawning check to one frame's result."""
+    if recent_yawns < FREQUENT_YAWNS or NO_FACE in result["issues"]:
+        return result
+    issues = result["issues"] + ["Frequent Yawning"]
+    score = max(0, 100 - sum(PENALTIES[i] for i in issues))
+    return {**result, "score": score, "state": state_for(score), "issues": issues}

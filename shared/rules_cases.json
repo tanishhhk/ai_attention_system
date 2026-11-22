@@ -42,7 +42,7 @@
       "id": "leaning",
       "demo": { "label": "Leaning", "description": "One shoulder sits clearly lower than the other." },
       "pose": { "right_shoulder": { "x": 0.7, "y": 0.9, "v": 0.99 } },
-      "expect": { "score": 85, "state": "FOCUSED", "issues": ["Leaning"], "notes": [] }
+      "expect": { "score": 80, "state": "ATTENTIVE", "issues": ["Leaning"], "notes": [] }
     },
     {
       "id": "head_forward",
@@ -73,7 +73,7 @@
       "id": "yawning",
       "demo": { "label": "Yawning", "description": "Mouth is wide open." },
       "face": { "lip_bottom": { "x": 0.5, "y": 0.48 } },
-      "expect": { "score": 85, "state": "FOCUSED", "issues": ["Yawning"], "notes": [] }
+      "expect": { "score": 80, "state": "ATTENTIVE", "issues": ["Yawning"], "notes": [] }
     },
     {
       "id": "looking_away",
@@ -104,11 +104,24 @@
       "expect": { "score": 80, "state": "ATTENTIVE", "issues": ["Slouching"], "notes": [] }
     },
     {
+      "id": "slouch_between_old_and_new_limit",
+      "pose": { "nose": { "x": 0.5, "y": 0.585, "v": 0.99 } },
+      "expect": { "score": 80, "state": "ATTENTIVE", "issues": ["Slouching"], "notes": [] }
+    },
+    {
       "id": "shoulders_hidden",
       "demo": { "label": "Face only", "description": "Shoulders are out of frame, so posture is skipped rather than passed." },
       "pose": {
         "left_shoulder": { "x": 0.3, "y": 0.98, "v": 0.1 },
         "right_shoulder": { "x": 0.7, "y": 0.98, "v": 0.1 }
+      },
+      "expect": { "score": 100, "state": "FOCUSED", "issues": [], "notes": ["Shoulders not in view: posture not checked"] }
+    },
+    {
+      "id": "shoulders_off_frame",
+      "pose": {
+        "left_shoulder": { "x": 0.3, "y": 1.15, "v": 0.95 },
+        "right_shoulder": { "x": 0.7, "y": 1.2, "v": 0.95 }
       },
       "expect": { "score": 100, "state": "FOCUSED", "issues": [], "notes": ["Shoulders not in view: posture not checked"] }
     },
@@ -135,6 +148,55 @@
         "nose_tip": { "x": 0.4, "y": 0.36 }
       },
       "expect": { "score": 10, "state": "CRITICAL", "issues": ["Head Forward", "Slouching", "Eyes Closed", "Looking Away"], "notes": [] }
+    }
+  ],
+  "_comment_history": "history_cases add the Frequent Yawning check to a frame result; yawn_sequences feed (seconds, yawning) frames to the yawn tracker and list the yawn count it should report after each frame.",
+  "history_cases": [
+    {
+      "id": "yawning_again_after_a_recent_yawn",
+      "case": "yawning",
+      "recent_yawns": 2,
+      "expect": { "score": 60, "state": "LOW ATTENTION", "issues": ["Yawning", "Frequent Yawning"], "notes": [] }
+    },
+    {
+      "id": "between_yawns",
+      "case": "focused",
+      "recent_yawns": 2,
+      "expect": { "score": 80, "state": "ATTENTIVE", "issues": ["Frequent Yawning"], "notes": [] }
+    },
+    {
+      "id": "one_recent_yawn_is_not_frequent",
+      "case": "focused",
+      "recent_yawns": 1,
+      "expect": { "score": 100, "state": "FOCUSED", "issues": [], "notes": [] }
+    },
+    {
+      "id": "no_face_ignores_history",
+      "case": "no_face",
+      "recent_yawns": 3,
+      "expect": { "score": 0, "state": "CRITICAL", "issues": ["No Face Detected"], "notes": [] }
+    }
+  ],
+  "yawn_sequences": [
+    {
+      "id": "short_mouth_opens_dont_count",
+      "frames": [[0, true], [0.5, true], [0.6, false], [2, true], [2.9, true], [3, false]],
+      "counts": [0, 0, 0, 0, 0, 0]
+    },
+    {
+      "id": "one_long_yawn_counts_once",
+      "frames": [[0, true], [1, true], [2, true], [4, true], [5, false]],
+      "counts": [0, 1, 1, 1, 1]
+    },
+    {
+      "id": "two_yawns_in_a_minute",
+      "frames": [[0, true], [1.2, true], [1.5, false], [20, true], [21.5, true], [22, false], [30, false]],
+      "counts": [0, 1, 1, 1, 2, 2, 2]
+    },
+    {
+      "id": "old_yawns_drop_out_after_60s",
+      "frames": [[0, true], [1.5, true], [2, false], [30, true], [31.5, true], [32, false], [62, false], [95, false]],
+      "counts": [0, 1, 1, 1, 2, 2, 1, 0]
     }
   ]
 }

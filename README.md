@@ -48,13 +48,18 @@ Every rule compares two distances in the same frame, so camera resolution and di
 | Issue | Measurement | Trips when | Penalty |
 |---|---|---|---|
 | Head Forward | Sideways nose offset from the shoulder midpoint ÷ shoulder width | above 0.20 | −20 |
-| Slouching | Nose height above the shoulder line ÷ shoulder width | below 0.25 | −20 |
-| Leaning | Height gap between the shoulders ÷ shoulder width | above 0.15 | −15 |
+| Slouching | Nose height above the shoulder line ÷ shoulder width | below 0.40 | −20 |
+| Leaning | Height gap between the shoulders ÷ shoulder width | above 0.15 | −20 |
 | Eyes Closed | Eyelid gap ÷ eye width, both eyes | below 0.15 | −30 |
-| Yawning | Lip gap ÷ mouth width | above 0.40 | −15 |
+| Yawning | Lip gap ÷ mouth width | above 0.40 | −20 |
 | Looking Away | Nose position between the cheeks (0–1) | outside 0.30–0.70 | −20 |
+| Frequent Yawning | Yawns in the last 60 s (a yawn = mouth open past the yawn limit for ≥ 1 s) | 2 or more | −20 |
 
-No face in view scores 0 (Critical). If the shoulders aren't visible, posture is skipped and reported as not checked. The limits are starting values and need tuning across more people and cameras.
+Any single tripped check takes the score to 80 or below, out of Focused. Frequent Yawning needs a video stream, so it applies to the live camera and the Flask app, not to single photos; it stays on between yawns until the older yawn is more than 60 s old.
+
+No face in view scores 0 (Critical). If the shoulders aren't visible (low visibility, or placed outside the frame, which MediaPipe does for close-ups), posture is skipped and reported as not checked.
+
+The slouch limit comes from measuring 20 example photos: upright poses measured 0.46–0.65 and slouched ones 0.33–0.37. The other limits are starting values. All of them need tuning across more real people and cameras.
 
 ### 4. State Classification
 
@@ -112,6 +117,14 @@ npm install
 npm run dev
 ```
 
+### Example photos
+
+`web/public/examples/<person>/` holds AI-generated photos (Google Gemini) of two fictional people in each scenario. `scripts/detect_examples.py` runs the browser version's MediaPipe models on them, keeps only photos that trip the check their scenario is meant to show, and writes the detected points to `web/src/examples.json`:
+
+```
+python scripts/detect_examples.py --face face_landmarker.task --pose pose_landmarker_lite.task
+```
+
 ### Tests
 
 Both versions run the same cases from `shared/rules_cases.json`:
@@ -128,14 +141,18 @@ ai_attention_system/
 ├── app.py               # Flask server and video stream
 ├── src/
 │   ├── detector.py      # MediaPipe landmarks → named points
+│   ├── detector_indices.py # Landmark numbers for the named points
 │   └── rules.py         # Rule-based scoring (pure Python, no OpenCV/MediaPipe)
+├── scripts/
+│   └── detect_examples.py # Detects landmarks in the example photos for the website
 ├── shared/
 │   └── rules_cases.json # Test cases shared by the Python and TypeScript rules
 ├── tests/
 │   └── test_rules.py
 ├── web/                 # Browser version (Vite + TypeScript), deployed on Vercel
 │   ├── index.html
-│   └── src/             # rules.ts, live.ts (camera + MediaPipe), figure.ts, readout.ts, main.ts
+│   ├── public/examples/ # AI-generated example photos, one folder per person
+│   └── src/             # rules.ts, live.ts (camera + MediaPipe), examples.ts, figure.ts, readout.ts, main.ts
 ├── vercel.json
 ├── templates/
 │   └── index.html

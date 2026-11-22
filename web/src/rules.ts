@@ -10,21 +10,29 @@ export type Result = { score: number; state: State; issues: string[]; notes: str
 
 export const MIN_SHOULDER_VISIBILITY = 0.5;
 export const HEAD_FORWARD_RATIO = 0.2;
-export const SLOUCH_RATIO = 0.25;
+export const SLOUCH_RATIO = 0.4; // upright photos 0.46-0.65, slouched 0.33-0.37
 export const LEAN_RATIO = 0.15;
 export const EYES_CLOSED_RATIO = 0.15;
 export const YAWN_RATIO = 0.4;
 export const FACING_MIN = 0.3;
 export const FACING_MAX = 0.7;
 
+// Any single tripped check drops the score to 80 or below, out of "Focused".
 export const PENALTIES: Record<string, number> = {
   "Head Forward": 20,
   Slouching: 20,
-  Leaning: 15,
+  Leaning: 20,
   "Eyes Closed": 30,
-  Yawning: 15,
+  Yawning: 20,
   "Looking Away": 20,
+  "Frequent Yawning": 20,
 };
+
+// A yawn counts once the mouth stays open past YAWN_RATIO this long (talking doesn't).
+export const YAWN_MIN_SECONDS = 1;
+// This many counted yawns within the window adds "Frequent Yawning", even between yawns.
+export const FREQUENT_YAWNS = 2;
+export const YAWN_WINDOW_SECONDS = 60;
 
 export const NO_FACE = "No Face Detected";
 export const SHOULDERS_HIDDEN_NOTE = "Shoulders not in view: posture not checked";
@@ -43,12 +51,20 @@ const dist = (a: Point, b: Point, w: number, h: number) =>
 
 const ratio = (num: number, den: number) => (den > 0 ? num / den : 0);
 
+const inFrame = (p: Point) => p.x >= 0 && p.x <= 1 && p.y >= 0 && p.y <= 1;
+
+// MediaPipe guesses off-frame shoulders with high visibility, so check the frame too.
+export function shouldersVisible(pose: PosePoints | null): pose is PosePoints {
+  if (pose === null) return false;
+  const { left_shoulder: l, right_shoulder: r } = pose;
+  return Math.min(l.v ?? 1, r.v ?? 1) >= MIN_SHOULDER_VISIBILITY && inFrame(l) && inFrame(r);
+}
+
 // Null when the shoulders can't be trusted, so posture is skipped.
 export function postureMeasures(pose: PosePoints | null, w: number, h: number) {
-  if (pose === null) return null;
+  if (!shouldersVisible(pose)) return null;
 
   const { left_shoulder: l, right_shoulder: r, nose } = pose;
-  if (Math.min(l.v ?? 1, r.v ?? 1) < MIN_SHOULDER_VISIBILITY) return null;
 
   const shoulderWidth = dist(l, r, w, h);
   const midX = ((l.x + r.x) / 2) * w;
@@ -105,4 +121,36 @@ export function evaluate(pose: PosePoints | null, face: FacePoints | null, w: nu
   issues.push(...faceIssues(face, w, h));
   const score = Math.max(0, 100 - issues.reduce((sum, i) => sum + PENALTIES[i], 0));
   return { score, state: stateFor(score), issues, notes };
+}
+
+// Counts yawns over time. Feed it every frame: update(seconds, result.issues.includes("Yawning")).
+export class YawnTracker {
+  private openSince: number | null = null;
+  private counted = false;
+  private yawns: number[] = [];
+
+  update(t: number, yawning: boolean): number {
+    if (yawning) {
+      if (this.openSince === null) {
+        this.openSince = t;
+        this.counted = false;
+      }
+      if (!this.counted && t - this.openSince >= YAWN_MIN_SECONDS) {
+        this.yawns.push(t);
+        this.counted = true;
+      }
+    } else {
+      this.openSince = null;
+    }
+    this.yawns = this.yawns.filter((y) => t - y <= YAWN_WINDOW_SECONDS);
+    return this.yawns.length;
+  }
+}
+
+// Add the Frequent Yawning check to one frame's result.
+export function addHistory(result: Result, recentYawns: number): Result {
+  if (recentYawns < FREQUENT_YAWNS || result.issues.includes(NO_FACE)) return result;
+  const issues = [...result.issues, "Frequent Yawning"];
+  const score = Math.max(0, 100 - issues.reduce((sum, i) => sum + PENALTIES[i], 0));
+  return { ...result, score, state: stateFor(score), issues };
 }

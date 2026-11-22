@@ -1,7 +1,7 @@
 // Draws the landmarks the rules see as a schematic figure (SVG).
 // Used for the hero, the examples and the live camera overlay.
 import type { FacePoints, Point, PosePoints } from "./rules";
-import { MIN_SHOULDER_VISIBILITY } from "./rules";
+import { shouldersVisible } from "./rules";
 
 export const VIEW_W = 640;
 
@@ -10,8 +10,6 @@ type FigureInput = {
   face: FacePoints | null;
   aspect: number; // height / width of the frame
   issues: string[];
-  // Examples move body and face points separately; draw the face on the body's nose.
-  alignFace?: boolean;
 };
 
 // Head outline: an oval spanning the cheeks, a little taller than wide.
@@ -30,17 +28,7 @@ function chin(f: FacePoints, vh: number) {
 
 const has = (issues: string[], ...names: string[]) => names.some((n) => issues.includes(n));
 
-function shiftFace(face: FacePoints, dx: number, dy: number): FacePoints {
-  return Object.fromEntries(
-    Object.entries(face).map(([k, p]) => [k, { x: p.x + dx, y: p.y + dy }]),
-  ) as FacePoints;
-}
-
-export function figureMarkup({ pose, face: rawFace, aspect, issues, alignFace }: FigureInput): string {
-  const face =
-    alignFace && pose && rawFace
-      ? shiftFace(rawFace, pose.nose.x - rawFace.nose_tip.x, pose.nose.y - rawFace.nose_tip.y)
-      : rawFace;
+export function figureMarkup({ pose, face, aspect, issues }: FigureInput): string {
   const vh = VIEW_W * aspect;
   const X = (p: Point) => (p.x * VIEW_W).toFixed(1);
   const Y = (p: Point) => (p.y * vh).toFixed(1);
@@ -49,7 +37,7 @@ export function figureMarkup({ pose, face: rawFace, aspect, issues, alignFace }:
 
   if (pose) {
     const { left_shoulder: l, right_shoulder: r, nose } = pose;
-    const hidden = Math.min(l.v ?? 1, r.v ?? 1) < MIN_SHOULDER_VISIBILITY;
+    const hidden = !shouldersVisible(pose);
     const mid = { x: (l.x + r.x) / 2, y: (l.y + r.y) / 2 };
     if (hidden) {
       parts.push(`<line class="fig-hidden" x1="${X(l)}" y1="${Y(l)}" x2="${X(r)}" y2="${Y(r)}"/>`);

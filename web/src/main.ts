@@ -1,56 +1,17 @@
 import "./style.css";
-import { build, cases } from "./cases";
+import { drawDetection, heroDetection, initExamples } from "./examples";
 import { setFigure } from "./figure";
 import { LiveSession, cameraErrorMessage, type LiveFrame } from "./live";
 import { STATE_KEY, STATE_LABEL, checkRows, checksTableMarkup, renderChecks, renderScore, scoreMarkup } from "./readout";
-import { STATES, evaluate, type State } from "./rules";
+import { STATES, type State } from "./rules";
 
 const $ = <T extends Element = HTMLElement>(sel: string) => document.querySelector<T>(sel)!;
 
-// ---- Hero: the focused example, drawn from the shared cases ----
-const focused = build(cases.find((c) => c.id === "focused")!);
-setFigure($<SVGSVGElement>("#hero-svg"), { pose: focused.pose, face: focused.face, aspect: focused.h / focused.w, issues: [] });
+// ---- Hero: the "focused" photo with the points MediaPipe found in it ----
+drawDetection($<SVGSVGElement>("#hero-svg"), heroDetection());
 
-// ---- Examples ----
-const demos = cases.filter((c) => c.demo);
-const scenarioRoot = $("#scenarios");
-const exampleScore = $("#example-score");
-exampleScore.innerHTML = scoreMarkup;
-$("#example-checks").innerHTML = checksTableMarkup("example-tbody");
-
-function showExample(id: string) {
-  const c = demos.find((d) => d.id === id)!;
-  const f = build(c);
-  const result = evaluate(f.pose, f.face, f.w, f.h);
-  setFigure($<SVGSVGElement>("#example-svg"), { pose: f.pose, face: f.face, aspect: f.h / f.w, issues: result.issues, alignFace: true });
-  $("#example-desc").textContent = c.demo!.description;
-  renderScore(exampleScore, result);
-  renderChecks($("#example-tbody"), checkRows(f.pose, f.face, f.w, f.h), result);
-  scenarioRoot.querySelectorAll<HTMLButtonElement>("button").forEach((b) => {
-    const on = b.dataset.id === id;
-    b.setAttribute("aria-checked", String(on));
-    b.tabIndex = on ? 0 : -1;
-  });
-}
-
-scenarioRoot.innerHTML = demos
-  .map((d) => `<button type="button" role="radio" data-id="${d.id}">${d.demo!.label}</button>`)
-  .join("");
-scenarioRoot.addEventListener("click", (e) => {
-  const btn = (e.target as HTMLElement).closest<HTMLButtonElement>("button[data-id]");
-  if (btn) showExample(btn.dataset.id!);
-});
-scenarioRoot.addEventListener("keydown", (e) => {
-  if (!["ArrowRight", "ArrowLeft", "ArrowDown", "ArrowUp"].includes(e.key)) return;
-  e.preventDefault();
-  const buttons = [...scenarioRoot.querySelectorAll<HTMLButtonElement>("button")];
-  const i = buttons.findIndex((b) => b.getAttribute("aria-checked") === "true");
-  const step = e.key === "ArrowRight" || e.key === "ArrowDown" ? 1 : -1;
-  const next = buttons[(i + step + buttons.length) % buttons.length];
-  showExample(next.dataset.id!);
-  next.focus();
-});
-showExample("drowsy_slump");
+// ---- Examples without a camera ----
+initExamples();
 
 // ---- Live check ----
 const cameraBtn = $<HTMLButtonElement>("#camera-btn");
@@ -77,7 +38,7 @@ function onFrame(f: LiveFrame) {
   if (now - lastReadout > 200) {
     lastReadout = now;
     renderScore(liveScore, f.result);
-    renderChecks($("#live-tbody"), checkRows(f.pose, f.face, f.w, f.h), f.result);
+    renderChecks($("#live-tbody"), checkRows(f.pose, f.face, f.w, f.h, f.recentYawns), f.result);
   }
 }
 

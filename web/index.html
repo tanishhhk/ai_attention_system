@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="A webcam attention check that scores posture and face position from 0 to 100 with six plain rules. Runs entirely in your browser." />
+    <meta name="description" content="A webcam attention check that scores posture and face position from 0 to 100 with seven plain rules. Runs entirely in your browser." />
     <meta name="theme-color" content="#EEF2F5" />
     <title>Attention monitor: how focused do you look?</title>
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
@@ -24,7 +24,7 @@
         <div class="hero-copy">
           <h1 id="hero-title">How focused do you look right now?</h1>
           <p class="lede">
-            This page watches your posture and face through your webcam and scores your attention from 0 to 100, using six plain
+            This page watches your posture and face through your webcam and scores your attention from 0 to 100, using seven plain
             rules you can read below. It all runs in your browser. Your video never leaves your device.
           </p>
           <div class="actions">
@@ -33,8 +33,11 @@
           </div>
         </div>
         <figure class="hero-figure">
-          <svg id="hero-svg" class="figure" role="img" aria-label="Landmark figure of a focused person: face outline, eyes, mouth and shoulders drawn as measured points"></svg>
-          <figcaption>The 18 points the rules read, for someone sitting upright and facing the screen.</figcaption>
+          <div class="photo-stage">
+            <img src="/examples/male/focused.jpg" width="1024" height="765" alt="A man sitting upright at a desk, facing the camera, with detected face and shoulder points drawn over him" fetchpriority="high" />
+            <svg id="hero-svg" class="figure figure-overlay" aria-hidden="true"></svg>
+          </div>
+          <figcaption>The 18 points the rules read, as MediaPipe found them in this photo. Score: 100, focused.</figcaption>
         </figure>
       </section>
 
@@ -73,12 +76,19 @@
       <section id="examples" class="panel wrap" aria-labelledby="examples-title">
         <h2 id="examples-title">Examples without a camera</h2>
         <p class="help">
-          Each example is a set of landmark positions, the same data the camera produces, scored by the same rules as the live check.
+          Each photo went through the same face and pose models as the live check. The points drawn on it are what they found, and
+          the score comes from the same rules. The people are AI-generated (Google Gemini); they aren't real.
         </p>
-        <div class="scenarios" role="radiogroup" aria-label="Example" id="scenarios"></div>
+        <div class="example-controls">
+          <div class="segmented" role="radiogroup" aria-label="Person" id="people"></div>
+          <div class="scenarios" role="radiogroup" aria-label="Example" id="scenarios"></div>
+        </div>
         <div class="example-grid">
           <figure class="example-figure">
-            <svg id="example-svg" class="figure" role="img" aria-labelledby="example-desc"></svg>
+            <div class="photo-stage">
+              <img id="example-img" src="/examples/male/drowsy_slump.jpg" width="1024" height="765" alt="Drowsy slump: an AI-generated man at a desk" loading="lazy" />
+              <svg id="example-svg" class="figure figure-overlay" aria-hidden="true"></svg>
+            </div>
             <figcaption id="example-desc"></figcaption>
           </figure>
           <div class="readout" id="example-score"></div>
@@ -94,15 +104,24 @@
             Three body points and fifteen face points become six measurements. Each is one distance divided by another in the same
             frame, so camera resolution and how close you sit don't change the result.
           </li>
-          <li>Every measurement past its limit takes points off a starting score of 100.</li>
+          <li>
+            Every measurement past its limit takes points off a starting score of 100, so any single problem moves you out of
+            focused.
+          </li>
+          <li>
+            One check looks back over time. A yawn counts when your mouth stays wide open for a second, and two yawns within a minute
+            take off another 20 points, even between yawns.
+          </li>
           <li>The score sets the state: above 80 is focused, above 60 attentive, above 40 low attention, above 20 distracted, otherwise critical.</li>
         </ol>
-        <h3>Limits</h3>
-        <p>
-          These are hand-written rules, not a trained model. Lighting, glasses and camera angle all move the landmarks, and the limits
-          are starting values that haven't been tuned across many people. It measures where your head, eyes and shoulders are, not
-          what you're thinking about.
-        </p>
+        <div class="limits">
+          <h3>Limits</h3>
+          <p>
+            These are hand-written rules, not a trained model. Lighting, glasses and camera angle all move the landmarks. The slouch
+            limit was set by measuring the example photos; the others are starting values, and none have been tuned across many real
+            people. It measures where your head, eyes and shoulders are, not what you're thinking about.
+          </p>
+        </div>
       </section>
     </main>
 

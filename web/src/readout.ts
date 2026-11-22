@@ -1,8 +1,8 @@
 // Score, state meter and the six-checks table. Shared by the live panel and the examples.
 import type { FacePoints, PosePoints, Result, State } from "./rules";
 import {
-  EYES_CLOSED_RATIO, FACING_MAX, FACING_MIN, HEAD_FORWARD_RATIO, LEAN_RATIO, PENALTIES,
-  SLOUCH_RATIO, YAWN_RATIO, faceMeasures, postureMeasures,
+  EYES_CLOSED_RATIO, FACING_MAX, FACING_MIN, FREQUENT_YAWNS, HEAD_FORWARD_RATIO, LEAN_RATIO, PENALTIES,
+  SLOUCH_RATIO, YAWN_RATIO, YAWN_WINDOW_SECONDS, faceMeasures, postureMeasures,
 } from "./rules";
 
 export const STATE_LABEL: Record<State, string> = {
@@ -25,7 +25,10 @@ type Row = { issue: string; label: string; measure: string; limit: string; value
 
 const fmt = (n: number) => n.toFixed(2);
 
-export function checkRows(pose: PosePoints | null, face: FacePoints | null, w: number, h: number): Row[] {
+// recentYawns is null for single photos, which have no history.
+export function checkRows(
+  pose: PosePoints | null, face: FacePoints | null, w: number, h: number, recentYawns: number | null = null,
+): Row[] {
   const p = postureMeasures(pose, w, h);
   const f = face ? faceMeasures(face, w, h) : null;
   const none = "–";
@@ -36,6 +39,7 @@ export function checkRows(pose: PosePoints | null, face: FacePoints | null, w: n
     { issue: "Eyes Closed", label: "Eyes closed", measure: "Eyelid gap ÷ eye width, for the more open eye", limit: `below ${fmt(EYES_CLOSED_RATIO)}`, value: f ? fmt(Math.max(f.leftOpen, f.rightOpen)) : none },
     { issue: "Yawning", label: "Yawning", measure: "Lip gap ÷ mouth width", limit: `above ${fmt(YAWN_RATIO)}`, value: f ? fmt(f.mouthOpen) : none },
     { issue: "Looking Away", label: "Looking away", measure: "Where the nose sits between the cheeks", limit: `outside ${fmt(FACING_MIN)}–${fmt(FACING_MAX)}`, value: f ? fmt(f.facing) : none },
+    { issue: "Frequent Yawning", label: "Frequent yawning", measure: "Yawns in the last minute (live camera only)", limit: `${FREQUENT_YAWNS} or more in ${YAWN_WINDOW_SECONDS} s`, value: recentYawns === null ? none : String(recentYawns) },
   ];
 }
 
@@ -78,7 +82,7 @@ export const scoreMarkup = `
 
 export const checksTableMarkup = (id: string) => `
   <table class="checks">
-    <caption class="visually-hidden">The six checks and their current values</caption>
+    <caption class="visually-hidden">The checks and their current values</caption>
     <thead><tr><th scope="col">Check</th><th scope="col" class="num">Value</th><th scope="col">Trips when</th><th scope="col" class="num">Points</th></tr></thead>
     <tbody id="${id}"></tbody>
   </table>`;

@@ -24,3 +24,9 @@ export function build(c: Case): Frame {
   const face = c.face === null ? null : ({ ...base.face, ...(c.face ?? {}) } as FacePoints);
   return { pose, face, w: c.w ?? base.w, h: c.h ?? base.h };
 }
+
+export type HistoryCase = { id: string; case: string; recent_yawns: number; expect: Result };
+export type YawnSequence = { id: string; frames: [number, boolean][]; counts: number[] };
+
+export const historyCases = data.history_cases as HistoryCase[];
+export const yawnSequences = data.yawn_sequences as YawnSequence[];

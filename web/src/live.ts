@@ -2,7 +2,7 @@
 import { FaceLandmarker, FilesetResolver, PoseLandmarker } from "@mediapipe/tasks-vision";
 import type { NormalizedLandmark } from "@mediapipe/tasks-vision";
 import type { FacePoints, PosePoints, Result } from "./rules";
-import { evaluate } from "./rules";
+import { YawnTracker, addHistory, evaluate } from "./rules";
 
 const WASM = "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@1.2.3/wasm";
 const FACE_MODEL = "https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task";
@@ -17,7 +17,7 @@ const FACE_INDEX = {
   nose_tip: 1, cheek_l: 234, cheek_r: 454,
 } as const;
 
-export type LiveFrame = { pose: PosePoints | null; face: FacePoints | null; w: number; h: number; result: Result };
+export type LiveFrame = { pose: PosePoints | null; face: FacePoints | null; w: number; h: number; result: Result; recentYawns: number };
 
 let landmarkers: Promise<{ face: FaceLandmarker; pose: PoseLandmarker }> | null = null;
 
@@ -65,6 +65,7 @@ export class LiveSession {
   private stream: MediaStream | null = null;
   private raf = 0;
   private lastTime = -1;
+  private yawns = new YawnTracker();
 
   constructor(
     private video: HTMLVideoElement,
@@ -84,6 +85,7 @@ export class LiveSession {
     const { face, pose } = await loadLandmarkers();
     if (!this.stream) return; // stopped while loading
     onStatus("");
+    this.yawns = new YawnTracker();
 
     const tick = () => {
       this.raf = requestAnimationFrame(tick);
@@ -98,7 +100,9 @@ export class LiveSession {
       const h = v.videoHeight;
       const posePts = poseLm ? (pick(poseLm, POSE_INDEX, true) as PosePoints) : null;
       const facePts = faceLm ? (pick(faceLm, FACE_INDEX, false) as FacePoints) : null;
-      this.onFrame({ pose: posePts, face: facePts, w, h, result: evaluate(posePts, facePts, w, h) });
+      const frame = evaluate(posePts, facePts, w, h);
+      const recentYawns = this.yawns.update(now / 1000, frame.issues.includes("Yawning"));
+      this.onFrame({ pose: posePts, face: facePts, w, h, result: addHistory(frame, recentYawns), recentYawns });
     };
     tick();
   }
