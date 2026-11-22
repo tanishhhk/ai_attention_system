@@ -2,6 +2,7 @@
 import { FaceLandmarker, FilesetResolver, PoseLandmarker } from "@mediapipe/tasks-vision";
 import type { NormalizedLandmark } from "@mediapipe/tasks-vision";
 import type { FacePoints, PosePoints, Result } from "./rules";
+import { LiveError, TimeoutError, withTimeout } from "./errors";
 import { YawnTracker, addHistory, evaluate } from "./rules";
 
 const WASM = "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@1.2.3/wasm";
@@ -52,61 +53,106 @@ const pick = <K extends string>(lm: NormalizedLandmark[], index: Record<K, numbe
     }),
   ) as Record<K, { x: number; y: number; v?: number }>;
 
-export function cameraErrorMessage(err: unknown): string {
-  const name = err instanceof DOMException ? err.name : "";
-  if (name === "NotAllowedError") return "Camera access is blocked. Allow it in your browser's site settings, or use the examples below.";
-  if (name === "NotFoundError" || name === "OverconstrainedError") return "No camera was found on this device. The examples below work without one.";
-  if (name === "NotReadableError") return "Another app is using the camera. Close it and press Start camera again.";
-  if (!window.isSecureContext) return "The camera only works over https.";
-  return "The face and pose models didn't load. Check your connection and press Start camera again.";
-}
+// Give up on the model download after this long; a retry reuses whatever arrived.
+const MODEL_TIMEOUT_MS = 45_000;
+// No new video frame for this long, with the tab visible, means the camera went away.
+const STALL_MS = 4_000;
+
+export type StartPhase = "requesting" | "loading";
 
 export class LiveSession {
   private stream: MediaStream | null = null;
   private raf = 0;
   private lastTime = -1;
+  private lastAdvance = 0;
   private yawns = new YawnTracker();
+  // Bumped by every start and stop, so a cancelled start knows to back out.
+  private attempt = 0;
 
   constructor(
     private video: HTMLVideoElement,
     private onFrame: (f: LiveFrame) => void,
-  ) {}
+    private onFail: (err: LiveError) => void,
+  ) {
+    document.addEventListener("visibilitychange", () => {
+      this.lastAdvance = performance.now(); // time in the background isn't a stall
+    });
+  }
 
-  async start(onPhase: (phase: "requesting" | "loading") => void) {
+  /** Resolves true once frames are flowing, false if stop() was called meanwhile. Throws on failure. */
+  async start(onPhase: (phase: StartPhase) => void): Promise<boolean> {
+    const attempt = ++this.attempt;
+    if (window.isSecureContext && !navigator.mediaDevices?.getUserMedia) throw new LiveError("unsupported");
+
     onPhase("requesting");
-    this.stream = await navigator.mediaDevices.getUserMedia({
+    const stream = await navigator.mediaDevices.getUserMedia({
       video: { facingMode: "user", width: { ideal: 640 }, height: { ideal: 480 } },
       audio: false,
     });
-    this.video.srcObject = this.stream;
-    await this.video.play();
+    if (attempt !== this.attempt) {
+      stream.getTracks().forEach((t) => t.stop()); // allowed after Cancel: switch it straight off
+      return false;
+    }
+    this.stream = stream;
+    stream.getVideoTracks()[0]?.addEventListener("ended", () => this.fail(new LiveError("disconnected")));
+    this.video.srcObject = stream;
+    try {
+      await this.video.play();
+    } catch (err) {
+      throw new LiveError("playback", err);
+    }
+    if (attempt !== this.attempt) return false;
 
     onPhase("loading");
-    const { face, pose } = await loadLandmarkers();
-    if (!this.stream) return; // stopped while loading
+    let landmarkers: { face: FaceLandmarker; pose: PoseLandmarker };
+    try {
+      landmarkers = await withTimeout(loadLandmarkers(), MODEL_TIMEOUT_MS);
+    } catch (err) {
+      throw new LiveError(err instanceof TimeoutError ? "timeout" : "models", err);
+    }
+    if (attempt !== this.attempt) return false;
+
+    const { face, pose } = landmarkers;
     this.yawns = new YawnTracker();
+    this.lastAdvance = performance.now();
 
     const tick = () => {
       this.raf = requestAnimationFrame(tick);
       const v = this.video;
-      if (v.readyState < 2 || v.currentTime === this.lastTime) return;
-      this.lastTime = v.currentTime;
-
       const now = performance.now();
-      const faceLm = face.detectForVideo(v, now).faceLandmarks[0];
-      const poseLm = pose.detectForVideo(v, now).landmarks[0];
-      const w = v.videoWidth;
-      const h = v.videoHeight;
-      const posePts = poseLm ? (pick(poseLm, POSE_INDEX, true) as PosePoints) : null;
-      const facePts = faceLm ? (pick(faceLm, FACE_INDEX, false) as FacePoints) : null;
-      const frame = evaluate(posePts, facePts, w, h);
-      const recentYawns = this.yawns.update(now / 1000, frame.issues.includes("Yawning"));
-      this.onFrame({ pose: posePts, face: facePts, w, h, result: addHistory(frame, recentYawns), recentYawns });
+      if (v.readyState < 2 || v.currentTime === this.lastTime) {
+        if (!document.hidden && now - this.lastAdvance > STALL_MS) this.fail(new LiveError("disconnected"));
+        return;
+      }
+      this.lastTime = v.currentTime;
+      this.lastAdvance = now;
+
+      try {
+        const faceLm = face.detectForVideo(v, now).faceLandmarks[0];
+        const poseLm = pose.detectForVideo(v, now).landmarks[0];
+        const w = v.videoWidth;
+        const h = v.videoHeight;
+        const posePts = poseLm ? (pick(poseLm, POSE_INDEX, true) as PosePoints) : null;
+        const facePts = faceLm ? (pick(faceLm, FACE_INDEX, false) as FacePoints) : null;
+        const frame = evaluate(posePts, facePts, w, h);
+        const recentYawns = this.yawns.update(now / 1000, frame.issues.includes("Yawning"));
+        this.onFrame({ pose: posePts, face: facePts, w, h, result: addHistory(frame, recentYawns), recentYawns });
+      } catch (err) {
+        this.fail(new LiveError("detection", err));
+      }
     };
     tick();
+    return true;
+  }
+
+  private fail(err: LiveError) {
+    if (!this.stream) return; // already stopped
+    this.stop();
+    this.onFail(err);
   }
 
   stop() {
+    this.attempt++;
     cancelAnimationFrame(this.raf);
     this.stream?.getTracks().forEach((t) => t.stop());
     this.stream = null;

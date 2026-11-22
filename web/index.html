@@ -67,6 +67,7 @@
                 <p class="stage-detail" id="stage-detail">Press Start camera when you're ready.</p>
                 <div class="progress" aria-hidden="true"><span></span></div>
                 <button type="button" class="btn btn-primary stage-start" id="stage-start">Start camera</button>
+                <button type="button" class="btn stage-cancel" id="stage-cancel">Cancel</button>
               </div>
             </div>
           </div>
@@ -87,7 +88,7 @@
       </section>
 
       <section id="examples" class="panel wrap" aria-labelledby="examples-title">
-        <div class="section-head">
+        <div class="section-head section-head-split">
           <div class="section-intro">
             <h2 id="examples-title">Examples without a camera</h2>
             <p class="section-sub">The points on each photo are what the face and pose models found. The score uses the same rules as the live check.</p>
@@ -109,6 +110,7 @@
             <div class="photo-stage">
               <img id="example-img" src="/examples/male/drowsy_slump.jpg" width="1024" height="765" alt="Drowsy slump: an AI-generated man at a desk" loading="lazy" />
               <svg id="example-svg" class="figure figure-overlay" aria-hidden="true"></svg>
+              <p class="photo-error" id="example-error" hidden>This photo didn't load. Check your connection and choose the example again.</p>
             </div>
             <figcaption id="example-desc"></figcaption>
           </figure>

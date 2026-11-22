@@ -1,6 +1,7 @@
 import "./style.css";
 import { drawDetection, heroDetection, initExamples } from "./examples";
-import { LiveSession, cameraErrorMessage, type LiveFrame } from "./live";
+import { describeError } from "./errors";
+import { LiveSession, type LiveFrame } from "./live";
 import { STATE_KEY, STATE_LABEL, checkRows, checksTableMarkup, renderChecks, renderScore, scoreMarkup } from "./readout";
 import { STATES, type State } from "./rules";
 
@@ -25,23 +26,24 @@ $("#live-checks").innerHTML = checksTableMarkup("live-tbody");
 
 type LiveState = "idle" | "requesting" | "loading" | "running" | "stopped" | "error";
 
-const STAGE_TEXT: Record<Exclude<LiveState, "running">, { title: string; detail: string; button?: string }> = {
+const STAGE_TEXT: Record<Exclude<LiveState, "running" | "error">, { title: string; detail: string; button?: string }> = {
   idle: { title: "Camera is off", detail: "Press Start camera when you're ready.", button: "Start camera" },
   requesting: { title: "Waiting for camera permission", detail: "Choose Allow in your browser's prompt." },
   loading: { title: "Loading the face and pose models", detail: "About 20 MB the first time. After that it starts almost instantly." },
   stopped: { title: "Camera stopped", detail: "Your results from this session stay below until you start again.", button: "Start again" },
-  error: { title: "The camera didn't start", detail: "", button: "Try again" },
 };
 
-function setLiveState(state: LiveState, errorDetail = "") {
+const stageCancel = $<HTMLButtonElement>("#stage-cancel");
+
+function setLiveState(state: LiveState, error?: { title: string; detail: string }) {
   liveGrid.dataset.state = state;
   const busy = state === "requesting" || state === "loading";
-  cameraBtn.disabled = busy;
-  cameraBtn.textContent = state === "running" ? "Stop camera" : "Start camera";
+  cameraBtn.textContent = state === "running" ? "Stop camera" : busy ? "Cancel" : "Start camera";
+  stageCancel.hidden = !busy;
   if (state === "running") return;
-  const text = STAGE_TEXT[state];
+  const text = state === "error" ? { ...error!, button: "Try again" } : STAGE_TEXT[state];
   $("#stage-title").textContent = text.title;
-  $("#stage-detail").textContent = state === "error" ? errorDetail : text.detail;
+  $("#stage-detail").textContent = text.detail;
   stageStart.hidden = !text.button;
   if (text.button) stageStart.textContent = text.button;
 }
@@ -65,8 +67,27 @@ function onFrame(f: LiveFrame) {
   }
 }
 
+// History only counts time you can see: a hidden tab pauses detection, so it pauses this too.
+let pausedWhileHidden = false;
+const pausedNote = document.createElement("p");
+pausedNote.className = "live-paused";
+pausedNote.hidden = true;
+pausedNote.textContent = "History paused while this tab was in the background.";
+liveScore.append(pausedNote); // inside the score block, so the grid layout is unchanged
+document.addEventListener("visibilitychange", () => {
+  if (!document.hidden && pausedWhileHidden && session.running) {
+    pausedNote.hidden = false;
+    window.setTimeout(() => (pausedNote.hidden = true), 6000);
+  }
+  if (!document.hidden) pausedWhileHidden = false;
+});
+
 function recordSecond() {
   if (!latest) return;
+  if (document.hidden) {
+    pausedWhileHidden = true;
+    return;
+  }
   const { score, state } = latest.result;
   history = [...history, score].slice(-HISTORY_SECONDS);
   seconds[state] += 1;
@@ -98,20 +119,26 @@ renderChecks($("#live-tbody"), checkRows(null, null, 640, 480, null), { score: 0
 drawHistory();
 setLiveState("idle");
 
-const session = new LiveSession($<HTMLVideoElement>("#video"), onFrame);
+const session = new LiveSession($<HTMLVideoElement>("#video"), onFrame, (err) => {
+  clearInterval(secondTimer);
+  latest = null;
+  setLiveState("error", describeError(err));
+});
 
 async function startCamera() {
-  if (session.running || cameraBtn.disabled) return;
+  if (session.running || liveGrid.dataset.state === "requesting" || liveGrid.dataset.state === "loading") return;
   try {
-    await session.start((phase) => setLiveState(phase));
+    const started = await session.start((phase) => setLiveState(phase));
+    if (!started) return; // cancelled
     history = [];
     seconds = Object.fromEntries(STATES.map((s) => [s, 0])) as Record<State, number>;
     lastAnnounced = null;
     drawHistory();
+    clearInterval(secondTimer);
     secondTimer = window.setInterval(recordSecond, 1000);
   } catch (err) {
     session.stop();
-    setLiveState("error", cameraErrorMessage(err));
+    setLiveState("error", describeError(err, window.isSecureContext));
   }
 }
 
@@ -122,8 +149,19 @@ function stopCamera() {
   setLiveState("stopped");
 }
 
-cameraBtn.addEventListener("click", () => (session.running ? stopCamera() : startCamera()));
+function cancelStart() {
+  session.stop();
+  setLiveState("idle");
+}
+
+cameraBtn.addEventListener("click", () => {
+  const state = liveGrid.dataset.state;
+  if (state === "requesting" || state === "loading") cancelStart();
+  else if (session.running) stopCamera();
+  else startCamera();
+});
 stageStart.addEventListener("click", () => startCamera());
+stageCancel.addEventListener("click", () => cancelStart());
 
 // The hero button scrolls to the panel (smoothly, unless reduced motion is on) and starts the camera.
 $("[data-start]").addEventListener("click", (e) => {

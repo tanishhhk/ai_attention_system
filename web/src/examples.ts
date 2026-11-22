@@ -62,14 +62,38 @@ export function initExamples() {
   scoreRoot.innerHTML = scoreMarkup;
   $("#example-checks").innerHTML = checksTableMarkup("example-tbody");
 
+  const photoError = $("#example-error");
   let person: Person = "male";
   let scenario = "drowsy_slump";
+  let renderId = 0;
+
+  // The points are drawn for the new photo, so keep them hidden until that photo is on screen.
+  function showPhoto(src: string) {
+    const id = ++renderId;
+    const loaded = () => {
+      if (id !== renderId) return;
+      img.style.visibility = "visible";
+      svg.style.visibility = "visible";
+      photoError.hidden = true;
+    };
+    const failed = () => {
+      if (id !== renderId) return;
+      img.style.visibility = "hidden";
+      svg.style.visibility = "hidden";
+      photoError.hidden = false;
+    };
+    svg.style.visibility = "hidden";
+    img.onload = loaded;
+    img.onerror = failed;
+    if (img.getAttribute("src") !== src) img.src = src;
+    if (img.complete) (img.naturalWidth > 0 ? loaded : failed)();
+  }
 
   function render() {
     const d = data[person][scenario];
     const meta = scenarios.find((s) => s.id === scenario)!.demo!;
     const noun = PEOPLE.find((p) => p.id === person)!.noun;
-    img.src = photoUrl(person, scenario);
+    showPhoto(photoUrl(person, scenario));
     img.alt = scenario === "no_face" ? "An empty desk with nobody in front of the camera" : `${meta.label}: an AI-generated ${noun} at a desk`;
     const result = drawDetection(svg, d);
     $("#example-desc").textContent = meta.description;

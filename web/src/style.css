@@ -345,7 +345,28 @@ h3 {
 .stage-start {
   margin-top: 0.5rem;
 }
-.stage-start[hidden] {
+.stage-start[hidden],
+.stage-cancel[hidden] {
+  display: none;
+}
+.stage-cancel {
+  margin-top: 0.25rem;
+  border-color: rgba(238, 242, 245, 0.45);
+  color: var(--paper);
+}
+.stage-cancel:hover {
+  background: rgba(238, 242, 245, 0.08);
+}
+.live-paused {
+  margin: 0.9rem 0 0;
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--radius);
+  background: var(--surface);
+  border: 1px solid var(--rule);
+  font-size: 0.92rem;
+  color: var(--ink-soft);
+}
+.live-paused[hidden] {
   display: none;
 }
 .spinner,
@@ -608,10 +629,27 @@ h3 {
   object-fit: cover;
 }
 
+.photo-error {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  margin: 0;
+  padding: 1.5rem;
+  text-align: center;
+  color: #b8c4cf;
+}
+.photo-error[hidden] {
+  display: none;
+}
+
 /* ---- Examples ---- */
+/* Examples head: intro and the AI-photo note share the width evenly. */
+.section-head-split {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
+}
 .disclaimer {
-  max-width: 62ch;
-  padding: 0.85rem 1rem;
+  padding: 1rem 1.25rem;
   background: var(--surface);
   border: 1px solid var(--rule);
   border-radius: var(--radius);
