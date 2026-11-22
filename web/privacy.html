@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="How the attention monitor handles your camera and data: video stays on your device, nothing is collected or stored." />
+    <meta name="theme-color" content="#EEF2F5" />
+    <title>Privacy policy: Attention monitor</title>
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&display=swap" rel="stylesheet" />
+  </head>
+  <body>
+    <header class="site-head wrap">
+      <a class="site-name" href="/">Attention monitor</a>
+      <a href="https://github.com/tanishhhk/ai_attention_system">Source on GitHub</a>
+    </header>
+
+    <main class="legal wrap">
+      <article>
+        <h1>Privacy policy</h1>
+        <p class="legal-date">Last updated 22 November 2026</p>
+
+        <section class="legal-summary" aria-labelledby="summary-title">
+          <h2 id="summary-title">In short</h2>
+          <ul>
+            <li>The camera turns on only when you press <strong>Start camera</strong>, and your browser asks you first.</li>
+            <li>Your video is analysed on your own device. It is never uploaded, recorded or saved.</li>
+            <li>There are no accounts, forms, cookies, analytics, ads or tracking.</li>
+            <li>To work, the page loads fonts and the detection models from a few outside services, which see your IP address the way any website does. They never receive your video.</li>
+          </ul>
+        </section>
+
+        <h2 id="who">Who runs this site</h2>
+        <p>
+          Attention monitor is a personal portfolio project by Tanishk Jain, hosted at ai-attention-system.vercel.app. It is not a
+          commercial service. For any question about this policy, open an issue on the
+          <a href="https://github.com/tanishhhk/ai_attention_system/issues">project's GitHub page</a>.
+        </p>
+
+        <h2 id="camera">Your camera and video</h2>
+        <ul>
+          <li>The site asks for camera access only after you press <strong>Start camera</strong>. Your browser shows its own permission prompt, and you can say no.</li>
+          <li>Each video frame is processed inside your browser tab by Google's MediaPipe face and pose models, which run on your device. The page turns each frame into a set of points and a score, shows them, and moves on.</li>
+          <li>No video, image, frame or landmark data is sent anywhere, recorded or stored. There is no server that could receive it: the site is static files only.</li>
+          <li>The score history on screen (the last minute's line and the time in each state) lives only in the open tab and is gone when you close or reload it.</li>
+          <li>The camera turns off when you press <strong>Stop camera</strong>, close the tab or leave the page. It never runs in the background.</li>
+          <li>The microphone is never requested.</li>
+        </ul>
+
+        <h2 id="collect">Information we collect</h2>
+        <p>
+          None. The site has no accounts or forms, sets no cookies, writes nothing to your browser's storage, and runs no analytics,
+          advertising or tracking code.
+        </p>
+
+        <h2 id="services">Outside services the page uses</h2>
+        <p>
+          Like most websites, the page loads some files from other services. Each of them receives the usual details of a web request,
+          such as your IP address, browser type and the time, under its own privacy policy. None of them receives your camera video.
+        </p>
+        <div class="table-scroll">
+          <table class="legal-table">
+            <caption class="visually-hidden">Outside services, what they provide and when</caption>
+            <thead>
+              <tr><th scope="col">Service</th><th scope="col">What it provides</th><th scope="col">When</th><th scope="col">Its policy</th></tr>
+            </thead>
+            <tbody>
+              <tr><th scope="row">Vercel</th><td>Hosts the site. Keeps standard server logs.</td><td>Every visit</td><td><a href="https://vercel.com/legal/privacy-policy">Vercel privacy policy</a></td></tr>
+              <tr><th scope="row">Google Fonts</th><td>The Archivo typeface</td><td>Every visit</td><td><a href="https://developers.google.com/fonts/faq/privacy">Google Fonts privacy</a></td></tr>
+              <tr><th scope="row">jsDelivr</th><td>The MediaPipe runtime files</td><td>When you start the camera</td><td><a href="https://www.jsdelivr.com/terms/privacy-policy-jsdelivr-net">jsDelivr privacy policy</a></td></tr>
+              <tr><th scope="row">Google Cloud Storage</th><td>The face and pose model files (about 10 MB)</td><td>When you start the camera</td><td><a href="https://policies.google.com/privacy">Google privacy policy</a></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          Your browser may keep copies of these files in its normal cache, as it does for any website. Links to GitHub and the author's
+          portfolio contact those sites only if you click them.
+        </p>
+
+        <h2 id="photos">Example photos</h2>
+        <p>
+          The people in the examples were generated with AI (Google Gemini) and are not real. No visitor's image is used anywhere on the
+          site.
+        </p>
+
+        <h2 id="permissions">Browser permissions</h2>
+        <p>This is every browser permission the site uses, and every one it doesn't.</p>
+        <div class="table-scroll">
+          <table class="legal-table">
+            <caption class="visually-hidden">Browser permissions and how the site uses them</caption>
+            <thead>
+              <tr><th scope="col">Permission</th><th scope="col">Used?</th><th scope="col">Details</th></tr>
+            </thead>
+            <tbody>
+              <tr><th scope="row">Camera</th><td>Yes, when you ask</td><td>Requested only after you press Start camera, to measure posture and face position on your device. Stops when you press Stop camera or leave the page.</td></tr>
+              <tr><th scope="row">Microphone</th><td>No</td><td>Never requested. The camera is opened with audio turned off.</td></tr>
+              <tr><th scope="row">Location</th><td>No</td><td>Never requested.</td></tr>
+              <tr><th scope="row">Notifications</th><td>No</td><td>Never requested.</td></tr>
+              <tr><th scope="row">Clipboard</th><td>No</td><td>Never read or written.</td></tr>
+              <tr><th scope="row">Cookies and site storage</th><td>No</td><td>No cookies, local storage or offline databases are created.</td></tr>
+              <tr><th scope="row">Screen, files, USB, Bluetooth, motion sensors</th><td>No</td><td>Never requested.</td></tr>
+              <tr><th scope="row">Background activity</th><td>No</td><td>Nothing runs after you leave the page. There is no service worker.</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <h3>Turning camera access off</h3>
+        <p>
+          If you allowed the camera and want to undo it, click the camera or lock icon in your browser's address bar and set Camera to
+          Block or Ask. You can also find it under Chrome's Settings, Privacy and security, Site settings, Camera; in Safari under
+          Settings for This Website; or in Firefox under the padlock's Connection secure, More information, Permissions.
+        </p>
+
+        <h2 id="children">Children</h2>
+        <p>The site is not aimed at children, and it collects no personal information from anyone, children included.</p>
+
+        <h2 id="rights">Your rights</h2>
+        <p>
+          Depending on where you live, laws such as India's Digital Personal Data Protection Act, 2023 or the EU's General Data
+          Protection Regulation give you rights over your personal data, such as access and deletion. This site holds no personal data
+          about you, so there is nothing to access or delete here. For the request details kept by Vercel, Google or jsDelivr, contact
+          those services through the policies linked above.
+        </p>
+
+        <h2 id="changes">Changes to this policy</h2>
+        <p>
+          If what the site does with data changes, this page will change with it and the date at the top will be updated. The full
+          history of this page is public in the project's GitHub repository.
+        </p>
+
+        <h2 id="contact">Contact</h2>
+        <p>
+          Questions or concerns: open an issue on <a href="https://github.com/tanishhhk/ai_attention_system/issues">GitHub</a>. See
+          also the <a href="/disclaimer">disclaimer</a>.
+        </p>
+      </article>
+    </main>
+
+    <footer class="site-foot wrap">
+      <p>
+        Built by <a href="https://tanishkjain.vercel.app/">Tanishk Jain</a>.
+        <a href="/privacy">Privacy policy</a> <a href="/disclaimer">Disclaimer</a>
+      </p>
+    </footer>
+
+    <script type="module" src="/src/legal.ts"></script>
+  </body>
+</html>

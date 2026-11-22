@@ -15,7 +15,7 @@
     <a class="skip" href="#live">Skip to the live check</a>
 
     <header class="site-head wrap">
-      <span class="site-name">Attention monitor</span>
+      <a class="site-name" href="/">Attention monitor</a>
       <a href="https://github.com/tanishhhk/ai_attention_system">Source on GitHub</a>
     </header>
 
@@ -48,7 +48,7 @@
         </div>
         <p id="camera-help" class="help">
           Sit as you normally would, with your face and shoulders in view. The first start downloads the face and pose models,
-          around 20&nbsp;MB.
+          around 20&nbsp;MB. Your video stays on your device: <a href="/privacy#camera">how the camera is handled</a>.
         </p>
         <p class="status" id="camera-status" role="status"></p>
 
@@ -77,8 +77,16 @@
         <h2 id="examples-title">Examples without a camera</h2>
         <p class="help">
           Each photo went through the same face and pose models as the live check. The points drawn on it are what they found, and
-          the score comes from the same rules. The people are AI-generated (Google Gemini); they aren't real.
+          the score comes from the same rules.
         </p>
+        <aside class="disclaimer" aria-label="About these photos">
+          <p>
+            <strong>These people aren't real.</strong> The photos were generated with AI (Google Gemini), so no real person's face is
+            shown. Generated faces don't always show expressions the way a real face does, so a result here can differ from what the
+            live check would give you. For the truest picture, <a href="#live">try it with your own camera</a>. Your video stays on
+            your device.
+          </p>
+        </aside>
         <div class="example-controls">
           <div class="segmented" role="radiogroup" aria-label="Person" id="people"></div>
           <div class="scenarios" role="radiogroup" aria-label="Example" id="scenarios"></div>
@@ -129,6 +137,7 @@
       <p>
         Built by <a href="https://tanishkjain.vercel.app/">Tanishk Jain</a>. The original Python version (Flask, OpenCV, MediaPipe) and
         the shared rule tests are in the <a href="https://github.com/tanishhhk/ai_attention_system">repository</a>.
+        <a href="/privacy">Privacy policy</a> <a href="/disclaimer">Disclaimer</a>
       </p>
     </footer>
 

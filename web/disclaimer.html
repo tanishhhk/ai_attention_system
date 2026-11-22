@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="What the attention monitor is and isn't: a portfolio demonstration, not a medical, safety or monitoring tool." />
+    <meta name="theme-color" content="#EEF2F5" />
+    <title>Disclaimer: Attention monitor</title>
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&display=swap" rel="stylesheet" />
+  </head>
+  <body>
+    <header class="site-head wrap">
+      <a class="site-name" href="/">Attention monitor</a>
+      <a href="https://github.com/tanishhhk/ai_attention_system">Source on GitHub</a>
+    </header>
+
+    <main class="legal wrap">
+      <article>
+        <h1>Disclaimer</h1>
+        <p class="legal-date">Last updated 22 November 2026</p>
+
+        <section class="legal-summary" aria-labelledby="summary-title">
+          <h2 id="summary-title">In short</h2>
+          <p>
+            Attention monitor is a demonstration project. Its score is an estimate from a few hand-written rules about head, eye and
+            shoulder positions. Don't use it to make decisions about your health, your safety or other people.
+          </p>
+        </section>
+
+        <h2 id="demo">A demonstration, not a product</h2>
+        <p>
+          This site is a personal portfolio project by Tanishk Jain, built to show a computer-vision technique. It is not a finished or
+          supported product, and it may change or go offline at any time.
+        </p>
+
+        <h2 id="medical">Not medical advice</h2>
+        <p>
+          The site does not detect or diagnose fatigue, sleep problems, attention disorders or any other condition, and nothing on it is
+          medical, psychological or professional advice. If you are worried about your attention, sleep or health, talk to a qualified
+          professional.
+        </p>
+
+        <h2 id="safety">Not for safety-critical use</h2>
+        <p>
+          Don't rely on it to judge whether you are alert enough to drive, operate machinery or do anything else where a mistake could
+          cause harm.
+        </p>
+
+        <h2 id="others">Not for monitoring other people</h2>
+        <p>
+          Don't use this site, or code from it, to watch or score anyone without their informed consent. Its scores are not suitable for
+          decisions about people, such as grades, exams, work performance, hiring or discipline.
+        </p>
+
+        <h2 id="accuracy">Accuracy and limits</h2>
+        <ul>
+          <li>The score comes from rules, not a trained model. It measures where your head, eyes, mouth and shoulders are, not what you are thinking about.</li>
+          <li>Lighting, glasses, hair, camera angle, camera quality and how you sit can all move the detected points and change the result.</li>
+          <li>The slouch limit was set by measuring 20 AI-generated example photos. The other limits are starting values. None have been tested across many real people.</li>
+          <li>Results can be wrong in either direction: flagging problems that aren't there, or missing ones that are.</li>
+        </ul>
+
+        <h2 id="photos">AI-generated example photos</h2>
+        <p>
+          The people in the examples were generated with AI (Google Gemini) to avoid using anyone's real face. They are not real, and any
+          resemblance to a real person is unintended. Generated faces may not show expressions the way real faces do, so the live check
+          with your own camera is the better guide to how the app behaves.
+        </p>
+
+        <h2 id="camera">Using your camera</h2>
+        <p>
+          Turning on the camera is your choice, and you can stop it at any time. The video is processed on your device and never
+          uploaded. The <a href="/privacy">privacy policy</a> explains exactly what happens.
+        </p>
+
+        <h2 id="third-party">Third-party technology and links</h2>
+        <p>
+          The face and pose detection uses Google's MediaPipe models. Names such as MediaPipe, Google, Gemini, Vercel, GitHub and
+          jsDelivr belong to their owners, and their use here does not mean those companies endorse this site. Links to other sites are
+          provided for convenience; their content and policies are their own.
+        </p>
+
+        <h2 id="warranty">No warranty</h2>
+        <p>
+          The site and its source code are provided as is, without warranties of any kind, including accuracy, reliability or fitness
+          for a particular purpose. To the extent the law allows, the author is not liable for any loss or harm arising from using the
+          site or relying on its results.
+        </p>
+
+        <h2 id="contact">Contact</h2>
+        <p>
+          To report a problem or ask a question, open an issue on
+          <a href="https://github.com/tanishhhk/ai_attention_system/issues">GitHub</a>.
+        </p>
+      </article>
+    </main>
+
+    <footer class="site-foot wrap">
+      <p>
+        Built by <a href="https://tanishkjain.vercel.app/">Tanishk Jain</a>.
+        <a href="/privacy">Privacy policy</a> <a href="/disclaimer">Disclaimer</a>
+      </p>
+    </footer>
+
+    <script type="module" src="/src/legal.ts"></script>
+  </body>
+</html>
