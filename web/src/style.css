@@ -217,28 +217,6 @@ h3 {
   border: 1px solid var(--rule);
   border-radius: var(--radius);
 }
-.fig-line {
-  fill: none;
-  stroke: var(--ink);
-  stroke-width: 2;
-  vector-effect: non-scaling-stroke;
-}
-.fig-head {
-  fill: var(--surface);
-}
-.fig-line.is-off {
-  stroke: var(--off);
-  stroke-width: 3;
-}
-.fig-hidden {
-  stroke: var(--ink-soft);
-  stroke-width: 1.5;
-  stroke-dasharray: 6 6;
-  vector-effect: non-scaling-stroke;
-}
-.fig-dot {
-  fill: var(--signal);
-}
 
 /* ---- Panels ---- */
 .panel {
@@ -417,24 +395,35 @@ h3 {
 .live-grid:is([data-state="idle"], [data-state="requesting"], [data-state="loading"], [data-state="error"]) :is(.readout, .live-checks, .history) {
   opacity: 0.5;
 }
+/* Face box over example photos: colour follows the attention state. */
+.facebox { --box: var(--ink-soft); }
+.facebox[data-state="focused"] { --box: var(--s-focused); }
+.facebox[data-state="attentive"] { --box: var(--s-attentive); }
+.facebox[data-state="low"] { --box: var(--s-low); }
+.facebox[data-state="distracted"] { --box: var(--s-distracted); }
+.facebox[data-state="critical"] { --box: var(--s-critical); }
+.facebox-frame {
+  fill: none;
+  stroke: var(--box);
+  stroke-width: 3;
+  vector-effect: non-scaling-stroke;
+}
+.facebox-tag {
+  fill: var(--box);
+}
+.facebox-text {
+  fill: #fff;
+  font-family: var(--font);
+  font-weight: 700;
+  dominant-baseline: central;
+}
+
 .figure-overlay {
   position: absolute;
   inset: 0;
   background: none;
   border: 0;
   height: 100%;
-}
-.figure-overlay .fig-line {
-  stroke: #fff;
-}
-.figure-overlay .fig-head {
-  fill: none;
-}
-.figure-overlay .fig-line.is-off {
-  stroke: #ff5a64;
-}
-.figure-overlay .fig-dot {
-  fill: #8fb0ff;
 }
 .live-checks,
 .example-checks,

@@ -1,84 +1,52 @@
-// Draws the landmarks the rules see as a schematic figure (SVG).
-// Used for the hero, the examples and the live camera overlay.
-import type { FacePoints, Point, PosePoints } from "./rules";
-import { shouldersVisible } from "./rules";
+// Draws a box around the detected face with the score and state, over a photo (SVG).
+// The box comes from the face points MediaPipe found; its colour follows the state.
+import { STATE_KEY, STATE_LABEL } from "./readout";
+import type { FacePoints, Result } from "./rules";
 
 export const VIEW_W = 640;
 
-type FigureInput = {
-  pose: PosePoints | null;
-  face: FacePoints | null;
-  aspect: number; // height / width of the frame
-  issues: string[];
-};
+const LABEL_H = 30;
+const FONT = 17;
 
-// Head outline: an oval spanning the cheeks, a little taller than wide.
-function headOval(f: FacePoints, vh: number) {
-  const left = Math.min(f.cheek_l.x, f.cheek_r.x);
-  const right = Math.max(f.cheek_l.x, f.cheek_r.x);
-  const rx = ((right - left) / 2) * VIEW_W;
-  const ry = rx * 1.3;
-  return { cx: ((left + right) / 2) * VIEW_W, cy: ((f.cheek_l.y + f.cheek_r.y) / 2) * vh + ry * 0.15, rx, ry };
+// Rough text width for the label background (Archivo, bold, at FONT px).
+const textWidth = (s: string) => s.length * FONT * 0.6;
+
+function faceBox(face: FacePoints, vh: number) {
+  const left = Math.min(face.cheek_l.x, face.cheek_r.x) * VIEW_W;
+  const right = Math.max(face.cheek_l.x, face.cheek_r.x) * VIEW_W;
+  const width = right - left;
+  const eyes = ((face.eye_l_top.y + face.eye_r_top.y) / 2) * vh;
+  const mouth = face.lip_bottom.y * vh;
+  const height = width * 1.3;
+  const top = (eyes + mouth) / 2 - height * 0.5;
+  const pad = width * 0.1;
+  return { x: left - pad, y: top - pad, w: width + pad * 2, h: height + pad * 2 };
 }
 
-function chin(f: FacePoints, vh: number) {
-  const o = headOval(f, vh);
-  return { x: o.cx, y: o.cy + o.ry };
-}
-
-const has = (issues: string[], ...names: string[]) => names.some((n) => issues.includes(n));
-
-export function figureMarkup({ pose, face, aspect, issues }: FigureInput): string {
+export function faceBoxMarkup(face: FacePoints | null, aspect: number, result: Result): string {
   const vh = VIEW_W * aspect;
-  const X = (p: Point) => (p.x * VIEW_W).toFixed(1);
-  const Y = (p: Point) => (p.y * vh).toFixed(1);
-  const parts: string[] = [];
-  const dots: Point[] = [];
+  const label = face ? `${result.score}% ${STATE_LABEL[result.state]}` : `No face ${result.score}%`;
+  const labelW = textWidth(label) + 20;
 
-  if (pose) {
-    const { left_shoulder: l, right_shoulder: r, nose } = pose;
-    const hidden = !shouldersVisible(pose);
-    const mid = { x: (l.x + r.x) / 2, y: (l.y + r.y) / 2 };
-    if (hidden) {
-      parts.push(`<line class="fig-hidden" x1="${X(l)}" y1="${Y(l)}" x2="${X(r)}" y2="${Y(r)}"/>`);
-    } else {
-      const sh = has(issues, "Leaning", "Slouching") ? " is-off" : "";
-      const neck = has(issues, "Head Forward", "Slouching") ? " is-off" : "";
-      const top = face ? chin(face, vh) : { x: nose.x * VIEW_W, y: nose.y * vh };
-      // A head sunk below the shoulder line hides the neck, as it would on camera.
-      if (top.y < mid.y * vh) {
-        parts.push(`<line class="fig-line${neck}" x1="${X(mid)}" y1="${Y(mid)}" x2="${top.x.toFixed(1)}" y2="${top.y.toFixed(1)}"/>`);
-      }
-      parts.push(`<line class="fig-line${sh}" x1="${X(l)}" y1="${Y(l)}" x2="${X(r)}" y2="${Y(r)}"/>`);
-      dots.push(l, r, nose);
-    }
+  if (!face) {
+    return `<g class="facebox" data-state="${STATE_KEY[result.state]}">
+      <rect class="facebox-tag" x="16" y="16" width="${labelW}" height="${LABEL_H}" rx="4"/>
+      <text class="facebox-text" x="26" y="${16 + LABEL_H / 2}" font-size="${FONT}">${label}</text>
+    </g>`;
   }
 
-  if (face) {
-    const f = face;
-    const { cx, cy, rx, ry } = headOval(f, vh);
-    const away = has(issues, "Looking Away") ? " is-off" : "";
-    parts.push(`<ellipse class="fig-line fig-head${away}" cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" rx="${rx.toFixed(1)}" ry="${ry.toFixed(1)}"/>`);
-
-    const oval = (a: Point, b: Point, top: Point, bottom: Point, off: boolean) => {
-      const ex = ((a.x + b.x) / 2) * VIEW_W;
-      const ey = ((top.y + bottom.y) / 2) * vh;
-      const erx = Math.max((Math.abs(a.x - b.x) / 2) * VIEW_W, 1);
-      const ery = Math.max((Math.abs(top.y - bottom.y) / 2) * vh, 0.8);
-      return `<ellipse class="fig-line${off ? " is-off" : ""}" cx="${ex.toFixed(1)}" cy="${ey.toFixed(1)}" rx="${erx.toFixed(1)}" ry="${ery.toFixed(1)}"/>`;
-    };
-    const eyesOff = has(issues, "Eyes Closed");
-    parts.push(oval(f.eye_l_outer, f.eye_l_inner, f.eye_l_top, f.eye_l_bottom, eyesOff));
-    parts.push(oval(f.eye_r_inner, f.eye_r_outer, f.eye_r_top, f.eye_r_bottom, eyesOff));
-    parts.push(oval(f.mouth_l, f.mouth_r, f.lip_top, f.lip_bottom, has(issues, "Yawning")));
-    dots.push(...Object.values(f));
-  }
-
-  const dotMarkup = dots.map((p) => `<circle class="fig-dot" cx="${X(p)}" cy="${Y(p)}" r="3.2"/>`).join("");
-  return `<g>${parts.join("")}${dotMarkup}</g>`;
+  const b = faceBox(face, vh);
+  const x = Math.max(4, Math.min(b.x, VIEW_W - b.w - 4));
+  const y = Math.max(LABEL_H + 4, b.y);
+  const tagX = Math.max(4, Math.min(x, VIEW_W - labelW - 4));
+  return `<g class="facebox" data-state="${STATE_KEY[result.state]}">
+    <rect class="facebox-frame" x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${b.w.toFixed(1)}" height="${b.h.toFixed(1)}" rx="6"/>
+    <rect class="facebox-tag" x="${tagX.toFixed(1)}" y="${(y - LABEL_H).toFixed(1)}" width="${labelW.toFixed(1)}" height="${LABEL_H}" rx="4"/>
+    <text class="facebox-text" x="${(tagX + 10).toFixed(1)}" y="${(y - LABEL_H / 2).toFixed(1)}" font-size="${FONT}">${label}</text>
+  </g>`;
 }
 
-export function setFigure(svg: SVGSVGElement, input: FigureInput) {
-  svg.setAttribute("viewBox", `0 0 ${VIEW_W} ${(VIEW_W * input.aspect).toFixed(1)}`);
-  svg.innerHTML = figureMarkup(input);
+export function setFaceBox(svg: SVGSVGElement, face: FacePoints | null, aspect: number, result: Result) {
+  svg.setAttribute("viewBox", `0 0 ${VIEW_W} ${(VIEW_W * aspect).toFixed(1)}`);
+  svg.innerHTML = faceBoxMarkup(face, aspect, result);
 }

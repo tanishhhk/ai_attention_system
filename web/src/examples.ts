@@ -2,7 +2,7 @@
 // (scripts/detect_examples.py writes examples.json), scored live by the same rules.
 import detected from "./examples.json";
 import { cases } from "./cases";
-import { setFigure } from "./figure";
+import { setFaceBox } from "./figure";
 import { checkRows, checksTableMarkup, renderChecks, renderScore, scoreMarkup } from "./readout";
 import type { FacePoints, PosePoints } from "./rules";
 import { evaluate } from "./rules";
@@ -22,7 +22,7 @@ export const photoUrl = (person: Person, id: string) => `/examples/${person}/${i
 
 export function drawDetection(svg: SVGSVGElement, d: Detection) {
   const result = evaluate(d.pose, d.face, d.w, d.h);
-  setFigure(svg, { pose: d.pose, face: d.face, aspect: d.h / d.w, issues: result.issues });
+  setFaceBox(svg, d.face, d.h / d.w, result);
   return result;
 }
 
