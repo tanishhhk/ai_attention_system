@@ -42,20 +42,33 @@
       </section>
 
       <section id="live" class="panel wrap" aria-labelledby="live-title">
-        <div class="panel-head">
-          <h2 id="live-title">Live check</h2>
-          <button type="button" class="btn btn-primary" id="camera-btn" aria-describedby="camera-help">Start camera</button>
+        <div class="section-head">
+          <div class="section-intro">
+            <h2 id="live-title">Live check</h2>
+            <p class="section-sub" id="camera-help">Sit as you normally would, with your face and shoulders in view.</p>
+          </div>
+          <div class="section-aside">
+            <ul class="facts">
+              <li><strong>On your device</strong><a href="/privacy#camera">Video is never uploaded</a></li>
+              <li><strong>About 20 MB</strong><span>Downloaded once, on first start</span></li>
+              <li><strong>Seven checks</strong><span>Posture, eyes, mouth and yawns</span></li>
+            </ul>
+            <button type="button" class="btn btn-primary" id="camera-btn" aria-describedby="camera-help">Start camera</button>
+          </div>
         </div>
-        <p id="camera-help" class="help">
-          Sit as you normally would, with your face and shoulders in view. The first start downloads the face and pose models,
-          around 20&nbsp;MB. Your video stays on your device: <a href="/privacy#camera">how the camera is handled</a>.
-        </p>
-        <p class="status" id="camera-status" role="status"></p>
 
-        <div class="live-grid" id="live-grid" hidden>
+        <div class="live-grid" id="live-grid" data-state="idle">
           <div class="stage">
             <video id="video" playsinline muted></video>
-            <svg id="live-svg" class="figure figure-overlay" aria-hidden="true"></svg>
+            <div class="stage-overlay" id="stage-overlay">
+              <div class="stage-message" role="status" aria-live="polite">
+                <span class="spinner" aria-hidden="true"></span>
+                <p class="stage-title" id="stage-title">Camera is off</p>
+                <p class="stage-detail" id="stage-detail">Press Start camera when you're ready.</p>
+                <div class="progress" aria-hidden="true"><span></span></div>
+                <button type="button" class="btn btn-primary stage-start" id="stage-start">Start camera</button>
+              </div>
+            </div>
           </div>
           <div class="readout" id="live-score"></div>
           <div class="live-checks" id="live-checks"></div>
@@ -74,19 +87,19 @@
       </section>
 
       <section id="examples" class="panel wrap" aria-labelledby="examples-title">
-        <h2 id="examples-title">Examples without a camera</h2>
-        <p class="help">
-          Each photo went through the same face and pose models as the live check. The points drawn on it are what they found, and
-          the score comes from the same rules.
-        </p>
-        <aside class="disclaimer" aria-label="About these photos">
-          <p>
-            <strong>These people aren't real.</strong> The photos were generated with AI (Google Gemini), so no real person's face is
-            shown. Generated faces don't always show expressions the way a real face does, so a result here can differ from what the
-            live check would give you. For the truest picture, <a href="#live">try it with your own camera</a>. Your video stays on
-            your device.
-          </p>
-        </aside>
+        <div class="section-head">
+          <div class="section-intro">
+            <h2 id="examples-title">Examples without a camera</h2>
+            <p class="section-sub">The points on each photo are what the face and pose models found. The score uses the same rules as the live check.</p>
+          </div>
+          <aside class="disclaimer section-aside" aria-label="About these photos">
+            <p>
+              <strong>These people aren't real.</strong> The photos are AI-generated (Google Gemini), so no real person's face is
+              used. Generated faces don't always show expressions the way real ones do, so for the truest result,
+              <a href="#live">try it with your own camera</a>.
+            </p>
+          </aside>
+        </div>
         <div class="example-controls">
           <div class="segmented" role="radiogroup" aria-label="Person" id="people"></div>
           <div class="scenarios" role="radiogroup" aria-label="Example" id="scenarios"></div>
@@ -105,29 +118,25 @@
       </section>
 
       <section class="panel wrap how" aria-labelledby="how-title">
-        <h2 id="how-title">How it works</h2>
+        <div class="section-head">
+          <div class="section-intro">
+            <h2 id="how-title">How it works</h2>
+            <p class="section-sub">From a camera frame to a score, in five steps.</p>
+          </div>
+        </div>
         <ol class="steps">
-          <li>MediaPipe finds 33 body points and 478 face points in each video frame.</li>
-          <li>
-            Three body points and fifteen face points become six measurements. Each is one distance divided by another in the same
-            frame, so camera resolution and how close you sit don't change the result.
-          </li>
-          <li>
-            Every measurement past its limit takes points off a starting score of 100, so any single problem moves you out of
-            focused.
-          </li>
-          <li>
-            One check looks back over time. A yawn counts when your mouth stays wide open for a second, and two yawns within a minute
-            take off another 20 points, even between yawns.
-          </li>
-          <li>The score sets the state: above 80 is focused, above 60 attentive, above 40 low attention, above 20 distracted, otherwise critical.</li>
+          <li><strong>Find the points</strong><span>MediaPipe finds 33 body points and 478 face points in each frame.</span></li>
+          <li><strong>Measure</strong><span>Eighteen of them become six ratios, so camera size and distance don't matter.</span></li>
+          <li><strong>Take off points</strong><span>Each ratio past its limit takes points off 100. Any one problem leaves focused.</span></li>
+          <li><strong>Watch for yawns</strong><span>Two yawns within a minute take off 20 more, even between yawns.</span></li>
+          <li><strong>Label it</strong><span>Above 80 focused, above 60 attentive, above 40 low attention, above 20 distracted.</span></li>
         </ol>
         <div class="limits">
           <h3>Limits</h3>
           <p>
-            These are hand-written rules, not a trained model. Lighting, glasses and camera angle all move the landmarks. The slouch
-            limit was set by measuring the example photos; the others are starting values, and none have been tuned across many real
-            people. It measures where your head, eyes and shoulders are, not what you're thinking about.
+            These are hand-written rules, not a trained model, and they measure where your head, eyes and shoulders are, not what
+            you're thinking. Lighting, glasses and camera angle all move the points. The slouch limit comes from measuring the example
+            photos; the others are starting values, untested across many real people.
           </p>
         </div>
       </section>
@@ -137,8 +146,8 @@
       <p>
         Built by <a href="https://tanishkjain.vercel.app/">Tanishk Jain</a>. The original Python version (Flask, OpenCV, MediaPipe) and
         the shared rule tests are in the <a href="https://github.com/tanishhhk/ai_attention_system">repository</a>.
-        <a href="/privacy">Privacy policy</a> <a href="/disclaimer">Disclaimer</a>
       </p>
+      <nav class="foot-links" aria-label="Legal"><a href="/privacy">Privacy policy</a><a href="/disclaimer">Disclaimer</a></nav>
     </footer>
 
     <script type="module" src="/src/main.ts"></script>

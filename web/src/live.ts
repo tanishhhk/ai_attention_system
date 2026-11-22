@@ -72,8 +72,8 @@ export class LiveSession {
     private onFrame: (f: LiveFrame) => void,
   ) {}
 
-  async start(onStatus: (msg: string) => void) {
-    onStatus("Asking for camera access…");
+  async start(onPhase: (phase: "requesting" | "loading") => void) {
+    onPhase("requesting");
     this.stream = await navigator.mediaDevices.getUserMedia({
       video: { facingMode: "user", width: { ideal: 640 }, height: { ideal: 480 } },
       audio: false,
@@ -81,10 +81,9 @@ export class LiveSession {
     this.video.srcObject = this.stream;
     await this.video.play();
 
-    onStatus("Loading the face and pose models…");
+    onPhase("loading");
     const { face, pose } = await loadLandmarkers();
     if (!this.stream) return; // stopped while loading
-    onStatus("");
     this.yawns = new YawnTracker();
 
     const tick = () => {

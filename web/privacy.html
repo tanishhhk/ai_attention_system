@@ -42,7 +42,7 @@
         <h2 id="camera">Your camera and video</h2>
         <ul>
           <li>The site asks for camera access only after you press <strong>Start camera</strong>. Your browser shows its own permission prompt, and you can say no.</li>
-          <li>Each video frame is processed inside your browser tab by Google's MediaPipe face and pose models, which run on your device. The page turns each frame into a set of points and a score, shows them, and moves on.</li>
+          <li>Each video frame is processed inside your browser tab by Google's MediaPipe face and pose models, which run on your device. The page turns each frame into a set of points and a score, shows the score, and moves on.</li>
           <li>No video, image, frame or landmark data is sent anywhere, recorded or stored. There is no server that could receive it: the site is static files only.</li>
           <li>The score history on screen (the last minute's line and the time in each state) lives only in the open tab and is gone when you close or reload it.</li>
           <li>The camera turns off when you press <strong>Stop camera</strong>, close the tab or leave the page. It never runs in the background.</li>
@@ -140,8 +140,8 @@
     <footer class="site-foot wrap">
       <p>
         Built by <a href="https://tanishkjain.vercel.app/">Tanishk Jain</a>.
-        <a href="/privacy">Privacy policy</a> <a href="/disclaimer">Disclaimer</a>
       </p>
+      <nav class="foot-links" aria-label="Legal"><a href="/privacy">Privacy policy</a><a href="/disclaimer">Disclaimer</a></nav>
     </footer>
 
     <script type="module" src="/src/legal.ts"></script>

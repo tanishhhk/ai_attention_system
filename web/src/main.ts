@@ -1,6 +1,5 @@
 import "./style.css";
 import { drawDetection, heroDetection, initExamples } from "./examples";
-import { setFigure } from "./figure";
 import { LiveSession, cameraErrorMessage, type LiveFrame } from "./live";
 import { STATE_KEY, STATE_LABEL, checkRows, checksTableMarkup, renderChecks, renderScore, scoreMarkup } from "./readout";
 import { STATES, type State } from "./rules";
@@ -14,14 +13,38 @@ drawDetection($<SVGSVGElement>("#hero-svg"), heroDetection());
 initExamples();
 
 // ---- Live check ----
+// The panel always keeps its full layout; only the stage message and the numbers change,
+// so starting the camera never shifts the page.
 const cameraBtn = $<HTMLButtonElement>("#camera-btn");
-const statusEl = $("#camera-status");
+const stageStart = $<HTMLButtonElement>("#stage-start");
 const liveGrid = $("#live-grid");
 const liveScore = $("#live-score");
-const liveSvg = $<SVGSVGElement>("#live-svg");
 const announce = $("#announce");
 liveScore.innerHTML = scoreMarkup;
 $("#live-checks").innerHTML = checksTableMarkup("live-tbody");
+
+type LiveState = "idle" | "requesting" | "loading" | "running" | "stopped" | "error";
+
+const STAGE_TEXT: Record<Exclude<LiveState, "running">, { title: string; detail: string; button?: string }> = {
+  idle: { title: "Camera is off", detail: "Press Start camera when you're ready.", button: "Start camera" },
+  requesting: { title: "Waiting for camera permission", detail: "Choose Allow in your browser's prompt." },
+  loading: { title: "Loading the face and pose models", detail: "About 20 MB the first time. After that it starts almost instantly." },
+  stopped: { title: "Camera stopped", detail: "Your results from this session stay below until you start again.", button: "Start again" },
+  error: { title: "The camera didn't start", detail: "", button: "Try again" },
+};
+
+function setLiveState(state: LiveState, errorDetail = "") {
+  liveGrid.dataset.state = state;
+  const busy = state === "requesting" || state === "loading";
+  cameraBtn.disabled = busy;
+  cameraBtn.textContent = state === "running" ? "Stop camera" : "Start camera";
+  if (state === "running") return;
+  const text = STAGE_TEXT[state];
+  $("#stage-title").textContent = text.title;
+  $("#stage-detail").textContent = state === "error" ? errorDetail : text.detail;
+  stageStart.hidden = !text.button;
+  if (text.button) stageStart.textContent = text.button;
+}
 
 const HISTORY_SECONDS = 60;
 let history: number[] = [];
@@ -33,7 +56,7 @@ let secondTimer = 0;
 
 function onFrame(f: LiveFrame) {
   latest = f;
-  setFigure(liveSvg, { pose: f.pose, face: f.face, aspect: f.h / f.w, issues: f.result.issues });
+  if (liveGrid.dataset.state !== "running") setLiveState("running");
   const now = performance.now();
   if (now - lastReadout > 200) {
     lastReadout = now;
@@ -70,25 +93,25 @@ function drawHistory() {
   }).join("");
 }
 
+// Empty readouts before the first start, so the panel has its final shape from the beginning.
+renderChecks($("#live-tbody"), checkRows(null, null, 640, 480, null), { score: 0, state: "CRITICAL", issues: [], notes: [] });
+drawHistory();
+setLiveState("idle");
+
 const session = new LiveSession($<HTMLVideoElement>("#video"), onFrame);
 
 async function startCamera() {
-  if (session.running) return;
-  cameraBtn.disabled = true;
+  if (session.running || cameraBtn.disabled) return;
   try {
-    await session.start((msg) => (statusEl.textContent = msg));
+    await session.start((phase) => setLiveState(phase));
     history = [];
     seconds = Object.fromEntries(STATES.map((s) => [s, 0])) as Record<State, number>;
     lastAnnounced = null;
-    liveGrid.hidden = false;
     drawHistory();
     secondTimer = window.setInterval(recordSecond, 1000);
-    cameraBtn.textContent = "Stop camera";
   } catch (err) {
     session.stop();
-    statusEl.textContent = cameraErrorMessage(err);
-  } finally {
-    cameraBtn.disabled = false;
+    setLiveState("error", cameraErrorMessage(err));
   }
 }
 
@@ -96,11 +119,16 @@ function stopCamera() {
   session.stop();
   clearInterval(secondTimer);
   latest = null;
-  cameraBtn.textContent = "Start camera";
-  statusEl.textContent = "Camera stopped. Your results from this session stay on screen until you start again.";
+  setLiveState("stopped");
 }
 
 cameraBtn.addEventListener("click", () => (session.running ? stopCamera() : startCamera()));
-$("[data-start]").addEventListener("click", () => {
+stageStart.addEventListener("click", () => startCamera());
+
+// The hero button scrolls to the panel (smoothly, unless reduced motion is on) and starts the camera.
+$("[data-start]").addEventListener("click", (e) => {
+  e.preventDefault();
+  const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  $("#live").scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" });
   startCamera();
 });
