@@ -393,8 +393,8 @@ h3 {
 .checks tr.is-off td {
   color: var(--off);
 }
-.checks tr.is-off th {
-  box-shadow: inset 4px 0 0 var(--off);
+.checks tr.is-off {
+  background: #fbeaeb;
 }
 
 /* ---- History ---- */
