@@ -2,7 +2,7 @@
 
 AI-based real-time attention monitoring.
 
-**Live demo:** https://ai-attention-system.vercel.app (runs in your browser; video never leaves your device)
+**Live demo:** https://focus-01.vercel.app (runs in your browser; video never leaves your device)
 
 ## Abstract
 
